@@ -1,0 +1,188 @@
+[
+  {
+    "function_id": "9",
+    "test_id": 0,
+    "param": [
+      "PT",
+      "PT",
+      "PT"
+    ],
+    "result": [],
+    "global_in": [
+      "PT",
+      "PT",
+      "PT"
+    ],
+    "global_out": [
+      "PT",
+      "PT",
+      "PT"
+    ],
+    "imported_function": [
+      {
+        "function_id": "0",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "1",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "2",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "3",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "4",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "5",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "6",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "7",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      }
+    ],
+    "queries": {
+      "result": "UNSAT",
+      "imported_function": []
+    }
+  }
+]

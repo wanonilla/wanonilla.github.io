@@ -1,0 +1,121 @@
+test testNoninterferencePositiveImportedFunctionCallArguments expect UNSAT for
+  (!cid: int) in testId(),
+  (!fid: int) in importedFunctionIds(),
+  (!dmy: bool) in importCallArgumentSafe(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+    for (!idx: int) in interval(0,as{!fid}()),
+        (!sec: bool) in argumentSecretForImportedFunctionAndPosition(!fid,!idx):
+      || (~!sec && labelOf(?at0[!idx]) = @H)
+  ;
+
+test testNoninterferenceNegativeImportedFunctionCallArguments expect SAT for
+  (!cid: int) in testId(),
+  (!fid: int) in importedFunctionIds(),
+  (!dmy: bool) in importCallArgumentLeak(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+    for (!idx: int) in interval(0,as{!fid}()),
+        (!sec: bool) in argumentSecretForImportedFunctionAndPosition(!fid,!idx):
+      || (~!sec && labelOf(?at0[!idx]) = @H)
+  ;
+
+test testNoninterferencePositiveImportedFunctionCallGlobals expect UNSAT for
+  (!cid: int) in testId(),
+  (!fid: int) in importedFunctionIds(),
+  (!dmy: bool) in importCallGlobalSafe(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+    for (!idx: int) in interval(0,gs()),
+        (!sec: bool) in globalInSecretForImportedFunctionAndPosition(!fid,!idx):
+      || (~!sec && labelOf(?gt0[!idx]) = @H)
+  ;
+
+test testNoninterferenceNegativeImportedFunctionCallGlobals expect SAT for
+  (!cid: int) in testId(),
+  (!fid: int) in importedFunctionIds(),
+  (!dmy: bool) in importCallGlobalLeak(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+    for (!idx: int) in interval(0,gs()),
+        (!sec: bool) in globalInSecretForImportedFunctionAndPosition(!fid,!idx):
+      || (~!sec && labelOf(?gt0[!idx]) = @H)
+  ;
+
+test testNoninterferencePositiveImportedFunctionCallMemoryData expect UNSAT for
+  (!cid: int) in testId(),
+  (!fid: int) in importedFunctionIds(),
+  (!dmy: bool) in importCallMemoryDataSafe(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+    for (!ldata: bool) in memoryDataInSecretForImportedFunction(!fid):
+      || (~!ldata && labelOfMem(?mem) = @H)
+  ;
+
+test testNoninterferenceNegativeImportedFunctionCallMemoryData expect SAT for
+  (!cid: int) in testId(),
+  (!fid: int) in importedFunctionIds(),
+  (!dmy: bool) in importCallMemoryDataLeak(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+    for (!ldata: bool) in memoryDataInSecretForImportedFunction(!fid):
+      || (~!ldata && labelOfMem(?mem) = @H)
+  ;
+
+test testNoninterferencePositiveImportedFunctionCallMemorySize expect UNSAT for
+  (!cid: int) in testId(),
+  (!fid: int) in importedFunctionIds(),
+  (!dmy: bool) in importCallMemorySizeSafe(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+    for (!lsize: bool) in memorySizeInSecretForImportedFunction(!fid):
+      || (~!lsize && labelOf(sizeOfMem(?mem)) = @H)
+  ;
+
+test testNoninterferenceNegativeImportedFunctionCallMemorySize expect SAT for
+  (!cid: int) in testId(),
+  (!fid: int) in importedFunctionIds(),
+  (!dmy: bool) in importCallMemorySizeLeak(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+    for (!ldata: bool, !lsize: bool, !lmax: bool) in memorySizeInSecretForImportedFunction(!fid):
+      || (~!lsize && labelOf(sizeOfMem(?mem)) = @H)
+  ;
+
+test testNoninterferencePositiveImportedFunctionCallContext expect UNSAT for
+  (!cid: int) in testId(),
+  (!fid: int) in importedFunctionIds(),
+  (!dmy: bool) in importCallContextSafe(!fid)
+
+  [?from: int, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, 0}(@HCtx(?from), [], ?gt, ?lt, ?mem, ?at0, ?gt0),
+    for (!sec: bool) in contextSecretForImportedFunction(!fid):
+      || ~!sec
+  ;
+
+test testNoninterferenceNegativeImportedFunctionCallContext expect SAT for
+  (!cid: int) in testId(),
+  (!fid: int) in importedFunctionIds(),
+  (!dmy: bool) in importCallContextLeak(!fid)
+
+  [?from: int, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, 0}(@HCtx(?from), [], ?gt, ?lt, ?mem, ?at0, ?gt0),
+    for (!sec: bool) in contextSecretForImportedFunction(!fid):
+      || ~!sec
+  ;

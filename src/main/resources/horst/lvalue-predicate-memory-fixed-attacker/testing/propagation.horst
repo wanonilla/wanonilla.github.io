@@ -1,0 +1,12 @@
+pred ReturnCall{!fid: int, !att: int}: Context * tuple<LValue;rs{!fid}()> * tuple<LValue;gs()> * Memory * Table * tuple<LValue; as{!fid}()> * tuple<LValue; gs()> * Memory;
+
+rule propagateReturnRule := for
+  (!fid: int) in startFunctionId(),
+  (!att: int) in relevantAttackers()
+
+  clause [?l: FlowLabel, ?from: int, ?rt: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    Return{!fid, !att}(@Ctx(?l, ?from), ?rt, ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    Init{!fid, !att}(?at0, ?gt0, ?mem0),
+    0 <= ?from
+      => ReturnCall{!fid, !att}(@Ctx(?l, ?from), ?rt, ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0)
+  ;

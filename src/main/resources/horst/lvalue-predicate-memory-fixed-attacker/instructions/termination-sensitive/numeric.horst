@@ -1,0 +1,73 @@
+rule trappingBinOpTsniRule := for
+  (!fid: int) in functionIds(),
+  (!op: int) in trappingBinOps(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, !op)
+
+  clause [?p: Label, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?res: MaybeValue]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    ?res = trappingBinOp{!op}(valueOf(?y), valueOf(?x)),
+    ~isJustV(?res) || ~isVal(valueOf(?x))
+      => TrapToJoin{!fid}(@Ctx(?p,labelOf(?x),!pc), ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?p: Label, ?from: int, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?res: MaybeValue]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?x :: ?y ::?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    ?res = trappingBinOp{!op}(valueOf(?y), valueOf(?x)),
+    ~isJustV(?res) || ~isVal(valueOf(?x)),
+    0 <= ?from
+      => TrapToJoin{!fid}(@Ctx(?p,@Illegal,?from), ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?p: Label, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?res: MaybeValue]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,~1), ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    ?res = trappingBinOp{!op}(valueOf(?y), valueOf(?x)),
+    ~isJustV(?res) || ~isVal(valueOf(?x))
+      => Trap{!fid}(@Ctx(?p,@Illegal,~1), ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?p: Label, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?res: MaybeValue, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    ?res = trappingBinOp{!op}(valueOf(?y), valueOf(?x)),
+    isJustV(?res),
+    labelOf(?x) = @Illegal
+      => MState{!fid, !pc + 1}(@Ctx(?p,@Illegal,!pc), @LVal(fromJustV(?res), @Illegal) :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?ctx: Context, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?res: MaybeValue, ?p: Label, ?from: int]
+    MState{!fid, !pc}(?ctx, ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    ?res = trappingBinOp{!op}(valueOf(?y), valueOf(?x)),
+    ~isJustV(?res) || ~isVal(valueOf(?x)),
+    raiseCtxTo{!pc}(?ctx, labelOf(?x)) = @Ctx(?p,@Illegal,?from)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule trappingCvtOpTsniRule := for
+  (!fid: int) in functionIds(),
+  (!op: int)  in trappingCvtOps(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, !op)
+
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0)
+      => TrapToJoin{!fid}(@Ctx(?p,labelOf(?x),!pc), ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?p: Label, ?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    0 <= ?from
+      => TrapToJoin{!fid}(@Ctx(?p,@Illegal,?from), ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?p: Label, ?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    ?from < 0
+      => Trap{!fid}(@Ctx(?p,@Illegal,?from), ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?p: Label, ?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?res: MaybeValue, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,?from), ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    labelOf(?x) = @Illegal
+      => MState{!fid, !pc + 1}(@Ctx(?p,@Illegal,!pc), @LVal(cvtOp{!op}(valueOf(?x)), @Illegal) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?p: Label, ?from: int]
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    raiseCtxTo{!pc}(?ctx, labelOf(?x)) = @Ctx(?p,@Illegal,?from)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;

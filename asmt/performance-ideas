@@ -1,0 +1,10 @@
+fancier dispatch (overall and get rid of match expressions)
+replace variables with index so that assignment can be an array, not a map
+get rid of polymorphic operations (by type checking)
+have a bytecode program and code that is executed if a register is updated (with nice layout so that all code that depends on a register change is executed automatically by jumping back)
+having a proper bytecode would also maybe make evaluation result caching superfluous
+evaluation caching
+
+with registers
+/tmp/horst476697548228037161.smt2 24708ms	239ms	63ms	44ms	221ms	24139ms 
+with map

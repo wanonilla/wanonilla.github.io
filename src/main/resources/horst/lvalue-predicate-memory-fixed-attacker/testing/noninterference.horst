@@ -1,0 +1,249 @@
+test testNoninterferenceResultUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in resultSafe(),
+  (!att: int) in relevantAttackers()
+
+  [?ctx: Context, ?rt: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    ReturnCall{!fid, !att}(?ctx, ?rt, ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+    for (!idx: int) in interval(0,rs{!fid}()),
+        (!cr: bool, !ir: bool) in resultLabelForPosition(!idx):
+      || flowsTo(mkLabel(!cr, !ir), attackerToLabel{!att}()) && labelOf(?rt[!idx]) = @Illegal
+  ;
+
+test testNoninterferenceResultSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in resultLeak(),
+  (!att: int) in relevantAttackers()
+
+  [?ctx: Context, ?rt: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    ReturnCall{!fid, !att}(?ctx, ?rt, ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+    for (!idx: int) in interval(0,rs{!fid}()),
+        (!cr: bool, !ir: bool) in resultLabelForPosition(!idx):
+      || flowsTo(mkLabel(!cr, !ir), attackerToLabel{!att}()) && labelOf(?rt[!idx]) = @Illegal
+  ;
+
+test testNoninterferenceGlobalUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in globalSafe(),
+  (!att: int) in relevantAttackers()
+
+  [?ctx: Context, ?rt: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    ReturnCall{!fid, !att}(?ctx, ?rt, ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalOutLabelForPosition(!idx):
+      || flowsTo(mkLabel(!cg, !ig), attackerToLabel{!att}()) && labelOf(?gt[!idx]) = @Illegal
+  ;
+
+test testNoninterferenceGlobalSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in globalLeak(),
+  (!att: int) in relevantAttackers()
+
+  [?ctx: Context, ?rt: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    ReturnCall{!fid, !att}(?ctx, ?rt, ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalOutLabelForPosition(!idx):
+      || flowsTo(mkLabel(!cg, !ig), attackerToLabel{!att}()) && labelOf(?gt[!idx]) = @Illegal
+  ;
+
+test testNoninterferenceMemoryDataUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in memoryDataSafe(),
+  (!att: int) in relevantAttackers()
+
+  [?ctx: Context, ?rt: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    ReturnCall{!fid, !att}(?ctx, ?rt, ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    for (!cd: bool, !id: bool) in memoryDataOutLabel():
+      || flowsTo(mkLabel(!cd, !id), attackerToLabel{!att}()) && labelOf(valueOfMem(?mem)) = @Illegal
+  ;
+
+test testNoninterferenceMemoryDataSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in memoryDataLeak(),
+  (!att: int) in relevantAttackers()
+
+  [?ctx: Context, ?rt: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    ReturnCall{!fid, !att}(?ctx, ?rt, ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    for (!cd: bool, !id: bool) in memoryDataOutLabel():
+      || flowsTo(mkLabel(!cd, !id), attackerToLabel{!att}()) && labelOf(valueOfMem(?mem)) = @Illegal
+  ;
+
+test testNoninterferenceMemorySizeUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in memorySizeSafe(),
+  (!att: int) in relevantAttackers()
+
+  [?ctx: Context, ?rt: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    ReturnCall{!fid, !att}(?ctx, ?rt, ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    for (!cs: bool, !is: bool) in memorySizeOutLabel():
+      || flowsTo(mkLabel(!cs, !is), attackerToLabel{!att}()) && labelOf(sizeOfMem(?mem)) = @Illegal
+  ;
+
+test testNoninterferenceMemorySizeSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in memorySizeLeak(),
+  (!att: int) in relevantAttackers()
+
+  [?ctx: Context, ?rt: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    ReturnCall{!fid, !att}(?ctx, ?rt, ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    for (!cs: bool, !is: bool) in memorySizeOutLabel():
+      || flowsTo(mkLabel(!cs, !is), attackerToLabel{!att}()) && labelOf(sizeOfMem(?mem)) = @Illegal
+  ;
+
+test testNoninterferenceTableUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in tableSafe(),
+  (!att: int) in relevantAttackers()
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ptbl: TablePrecision, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, 0, !att}(?ctx, [], ?gt, ?lt, ?mem, @Tbl(?ptbl, @Illegal), ?at0, ?gt0, ?mem0),
+    for (!ct: bool, !it: bool) in tableOutLabel():
+      || flowsTo(mkLabel(!ct, !it), attackerToLabel{!att}())
+  ;
+
+test testNoninterferenceTableSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in tableLeak(),
+  (!att: int) in relevantAttackers()
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ptbl: TablePrecision, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, 0, !att}(?ctx, [], ?gt, ?lt, ?mem, @Tbl(?ptbl, @Illegal), ?at0, ?gt0, ?mem0),
+    for (!ct: bool, !it: bool) in tableOutLabel():
+      || flowsTo(mkLabel(!ct, !it), attackerToLabel{!att}())
+  ;
+
+test testNoninterferenceMemoryAreaUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int, !start: int, !endInclusive: int) in memoryAreaSafe(),
+  (!att: int) in relevantAttackers()
+
+  [?ctx: Context, ?rt: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    ReturnCall{!fid, !att}(?ctx, ?rt, ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    absle(mkValue(!start), indexOfMem(?mem)),
+    absle(indexOfMem(?mem), mkValue(!endInclusive)),
+    for (!cd: bool, !id: bool) in memoryDataOutLabel():
+      || flowsTo(mkLabel(!cd, !id), attackerToLabel{!att}()) && labelOf(valueOfMem(?mem)) = @Illegal
+  ;
+
+test testNoninterferenceMemorAreaSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int, !start: int, !endInclusive: int) in memoryAreaLeak(),
+  (!att: int) in relevantAttackers()
+
+  [?ctx: Context, ?rt: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    ReturnCall{!fid, !att}(?ctx, ?rt, ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    absle(mkValue(!start), indexOfMem(?mem)),
+    absle(indexOfMem(?mem), mkValue(!endInclusive)),
+    for (!cd: bool, !id: bool) in memoryDataOutLabel():
+      || flowsTo(mkLabel(!cd, !id), attackerToLabel{!att}()) && labelOf(valueOfMem(?mem)) = @Illegal
+  ;
+
+//test bla expect SAT for
+//  (!fid: int) in startFunctionId(),
+//  (!pc:  int) in interval(0, 18)
+//
+//  [?ctx: Context, ?st: tuple<LValue; ss{!fid, !pc}()>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+//    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+////    labelOf(valueOfMem(?mem)) = @Illegal,
+////    attackerToLabel{!att}() = mkBot()
+//    true
+//  ;
+
+
+//test bla333 expect UNSAT for
+//  (!fid: int) in startFunctionId(),
+//  (!pc: int)  in interval(0,18)
+//
+//  [?ctx: Context, ?st: tuple<LValue; ss{!fid, !pc}()>,
+//   ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+//    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+//    //absle(mkConst{1024}(), indexOfMem(?mem)),
+//    //abslt(indexOfMem(?mem), mkConst{1024 + 13}()),
+//
+//    mkConst{1024}() = indexOfMem(?mem),
+//    valueOf(valueOfMem(?mem)) != mkConst{0}(),
+////    labelOf(valueOfMem(?mem)) = @Illegal,
+////    perspectiveOfCtx(?ctx) = mkBot()
+//    true
+//  ;
+//test bla336 expect UNSAT for
+//  (!fid: int) in startFunctionId(),
+//  (!pc: int)  in interval(12,13)
+//
+//  [?ctx: Context, ?st: tuple<LValue; ss{!fid, !pc}()>,
+//   ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+//    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+//    //absle(mkConst{1024}(), indexOfMem(?mem)),
+//    //abslt(indexOfMem(?mem), mkConst{1024 + 13}()),
+//
+////    mkConst{1024}() = indexOfMem(?mem),
+////    valueOf(valueOfMem(?mem)) != mkConst{0}(),
+//    valueOf(?st[0]) = mkConst{0}(),
+////    labelOf(valueOfMem(?mem)) = @Illegal,
+////    perspectiveOfCtx(?ctx) = mkBot()
+//    true
+//  ;
+
+
+/*
+  clause [?ctx: Context, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?p: Label, ?cl: FlowLabel, ?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rl: FlowLabel, ?rfrom: int, ?rt: tuple<LValue; rs{!cid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    ?p = attackerToLabel{!att}(),
+    ?cl = labelOfCtx(?ctx),
+    Return{!cid}(@Ctx(?p,?rl,?rfrom), ?rt, ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    */
+/*
+test blaret expect UNSAT for
+  (!fid: int) in interval(9,10)
+
+  [?ctx: Context, //?st: tuple<LValue; ss{!fid, !pc}()>,
+   ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory,
+   ?rl: FlowLabel, ?rfrom: int, ?rt: tuple<LValue; rs{!fid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table,
+   ?p: Label, ?cl: FlowLabel, ?at: tuple<LValue; as{!fid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+  ]
+    Return{!fid}(@Ctx(?p,?rl,?rfrom), ?rt, ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    valueOf(valueOfMem(?rmem)) != mkConst{0}(),
+    mkConst{1024}() = indexOfMem(?rmem),
+    valueOf(valueOfMem(?nmem)) != mkConst{0}(),
+    mkConst{1024}() = indexOfMem(?nmem),
+    valueOf(?rt[0]) = mkConst{0}(),
+    true
+  ;
+
+test blaasdfasdf expect UNSAT for
+  (!fid: int) in interval(9,10),
+  (!pc: int) in interval(5,6)
+
+  [?ctx: Context, ?st: tuple<LValue; ss{!fid, !pc}()>,
+   ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory,
+   ?rl: FlowLabel, ?rfrom: int, ?rt: tuple<LValue; rs{!fid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table,
+   ?p: Label, ?cl: FlowLabel, ?at: tuple<LValue; as{!fid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+  ]
+
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    valueOf(valueOfMem(?mem)) != mkConst{0}(),
+    mkConst{1024}() = indexOfMem(?mem),
+    valueOf(?st[0]) = mkConst{0}(),
+    true
+  ;
+*/
+
+/*
+test testGeneralReachability expect UNSAT for
+  (!fid: int) in interval(2,5),
+  (!pc: int) in pcsForFunctionId(!fid)
+
+  [?ctx: Context, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    valueOf(?gt[0]) != mkConst{0}()
+  ;
+*/

@@ -1,0 +1,56 @@
+op overApproximateLoopGlobals{!fid: int, !pc: int}(gt: tuple<LValue; gs()>, ngt: tuple<LValue; gs()>): bool :=
+  for (!i: int) in interval(0, gs()),
+      (!bw: int) in bitwidthForGlobal(!i),
+      (!g: bool) in globalModifiedInLoopBlock(!fid,!pc,!i):
+    && (!g) ? (isInRange{!bw}(valueOf(ngt[!i])) && labelOf(gt[!i]) = labelOf(ngt[!i])) : (gt[!i] = ngt[!i])
+  ;
+
+op overApproximateLoopLocals{!fid: int, !pc: int}(lt: tuple<LValue; ls{!fid}()>, nlt: tuple<LValue; ls{!fid}()>): bool :=
+  for (!i: int) in interval(0, ls{!fid}()),
+      (!bw: int) in bitwidthForLocal(!fid,!i),
+      (!l: bool) in localModifiedInLoopBlock(!fid,!pc,!i):
+    && (!l) ? (isInRange{!bw}(valueOf(nlt[!i])) && labelOf(lt[!i]) = labelOf(nlt[!i])) : (lt[!i] = nlt[!i])
+  ;
+
+op overApproximateLoopMemory{!fid: int, !pc: int}(mem: Memory, nmem: Memory): bool :=
+     indexOfMem(mem) = indexOfMem(nmem)
+  && for (!s: bool) in memoryStoreInLoopBlock(!fid,!pc):
+    && (!s)
+        ? (isInRange{8}(valueOf(valueOfMem(nmem))) && labelOf(valueOfMem(mem)) = labelOf(valueOfMem(nmem)))
+        : (valueOfMem(mem) = valueOfMem(nmem))
+  && for (!g: bool) in memoryGrowInLoopBlock(!fid,!pc):
+    && (!g)
+        ? (ileu{64}(valueOf(sizeOfMem(mem)),valueOf(sizeOfMem(nmem))) && ileu{64}(valueOf(sizeOfMem(nmem)),mkConst{mms()}()) && labelOf(sizeOfMem(mem)) = labelOf(sizeOfMem(nmem)))
+        : (sizeOfMem(mem) = sizeOfMem(nmem))
+  ;
+
+
+//op overApproximateCallArguments{!fid: int}(at: tuple<LValue; as{!fid}()>, nat: tuple<LValue; as{!fid}()>): bool := at = nat;
+
+//op overApproximateCallGlobals{!fid: int}(gt: tuple<LValue; gs()>, ngt: tuple<LValue; gs()>): bool := gt = ngt;
+
+//op overApproximateCallMemory{!fid: int}(mem: Memory, nmem: Memory): bool := mem = nmem;
+
+
+op overApproximateCallArguments{!fid: int}(at: tuple<LValue; as{!fid}()>, nat: tuple<LValue; as{!fid}()>): bool :=
+  for (!i: int) in interval(0, as{!fid}()),
+      (!bw: int) in bitwidthForArgument(!fid,!i):
+    && isInRange{!bw}(valueOf(nat[!i]))
+    && labelOf(at[!i]) = labelOf(nat[!i])
+  ;
+
+op overApproximateCallGlobals{!fid: int}(gt: tuple<LValue; gs()>, ngt: tuple<LValue; gs()>): bool :=
+  for (!i: int) in interval(0, gs()),
+      (!bw: int) in bitwidthForGlobal(!i):
+    && isInRange{!bw}(valueOf(ngt[!i]))
+    && labelOf(gt[!i]) = labelOf(ngt[!i])
+  ;
+
+op overApproximateCallMemory{!fid: int}(mem: Memory, nmem: Memory): bool :=
+     indexOfMem(mem) = indexOfMem(nmem)
+  && isInRange{8}(valueOf(valueOfMem(nmem)))
+  && labelOf(valueOfMem(mem)) = labelOf(valueOfMem(nmem))
+  && ileu{64}(valueOf(sizeOfMem(mem)),valueOf(sizeOfMem(nmem)))
+  && ileu{64}(valueOf(sizeOfMem(nmem)),mkConst{mms()}())
+  && labelOf(sizeOfMem(mem)) = labelOf(sizeOfMem(nmem))
+  ;

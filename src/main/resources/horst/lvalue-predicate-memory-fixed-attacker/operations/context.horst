@@ -1,0 +1,13 @@
+op mkCtx(l: FlowLabel): Context :=
+  @Ctx(l, ~1)
+  ;
+
+op labelOfCtx(ctx: Context): FlowLabel := match ctx with
+  | @Ctx(l,_) => l
+  | _           => @Illegal // Should not happen!
+  ;
+
+op raiseCtxTo{!pc: int}(ctx: Context, l: FlowLabel): Context := match ctx with
+  | @Ctx(cl,from) => @Ctx(flub{2}([cl,l]), (l = @Legal || cl = @Illegal) ? (from) : (!pc))
+  | _             => ctx // Should not happen!
+  ;

@@ -1,0 +1,53 @@
+sel startFunctionId: unit -> [int];
+
+sel argumentLabelForPosition : int -> [bool * bool];
+sel globalInLabelForPosition : int -> [bool * bool];
+sel memoryDataInLabel: unit -> [bool * bool];
+sel memorySizeInLabel: unit -> [bool * bool];
+sel tableInLabel: unit -> [bool * bool];
+sel memoryDataInLabelExceptions: unit -> [int * int * bool * bool];
+
+sel resultLabelForPosition : int -> [bool * bool];
+sel globalOutLabelForPosition : int -> [bool * bool];
+sel memoryDataOutLabel: unit -> [bool * bool];
+sel memorySizeOutLabel: unit -> [bool * bool];
+sel tableOutLabel: unit -> [bool * bool];
+
+sel argumentLabelForImportedFunctionAndPosition: int * int -> [bool * bool];
+sel globalInLabelForImportedFunctionAndPosition: int * int -> [bool * bool];
+sel memoryDataInLabelForImportedFunction: int -> [bool * bool];
+sel memorySizeInLabelForImportedFunction: int -> [bool * bool];
+sel contextLabelForImportedFunction: int -> [bool * bool];
+sel tableInLabelForImportedFunction: int -> [bool * bool];
+
+sel resultLabelForImportedFunctionAndPosition: int * int -> [bool * bool];
+sel globalOutLabelForImportedFunctionAndPosition: int * int -> [bool * bool * bool];
+sel memoryDataOutLabelForImportedFunction: int -> [bool * bool * bool];
+sel memorySizeOutLabelForImportedFunction: int -> [bool * bool * bool];
+sel tableOutLabelForImportedFunction: int -> [bool * bool * bool];
+
+sel resultSafe : unit -> [int];
+sel globalSafe : unit -> [int];
+sel memoryDataSafe : unit -> [int];
+sel memorySizeSafe : unit -> [int];
+sel memoryAreaSafe : unit -> [int*int*int];
+sel tableSafe : unit -> [int];
+sel importCallArgumentSafe : int -> [int];
+sel importCallGlobalSafe : int -> [int];
+sel importCallMemoryDataSafe : int -> [int];
+sel importCallMemorySizeSafe : int -> [int];
+sel importCallTableSafe : int -> [int];
+sel importCallContextSafe : int -> [int];
+
+sel resultLeak : unit -> [int];
+sel globalLeak : unit -> [int];
+sel memoryDataLeak : unit -> [int];
+sel memorySizeLeak : unit -> [int];
+sel memoryAreaLeak : unit -> [int*int*int];
+sel tableLeak : unit -> [int];
+sel importCallArgumentLeak : int -> [int];
+sel importCallGlobalLeak : int -> [int];
+sel importCallMemoryDataLeak : int -> [int];
+sel importCallMemorySizeLeak : int -> [int];
+sel importCallTableLeak : int -> [int];
+sel importCallContextLeak : int -> [int];

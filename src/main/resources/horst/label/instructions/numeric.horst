@@ -1,0 +1,75 @@
+op binOp(x: Value, y: Value): Value := match (x,y) with
+  | (@Val(lx),@Val(ly)) => @Val(lub{2}([lx,ly]))
+  | _                   => @Val(@H) // Should not happen!
+  ;
+
+rule constRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int, !v: int, !top: bool) in pcsAndValueAndTopOfConstsForFunctionId(!fid)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, [raiseTo(mkValue(),labelOfCtx(?ctx)),] ++ ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule unOpRule := for
+  (!fid: int) in functionIds(),
+  (!op: int) in unOps(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, !op)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, [raiseTo(?st[0], labelOfCtx(?ctx)),] ++ ?st[1:], ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule binOpRule := for
+  (!fid: int) in functionIds(),
+  (!op: int) in binOps(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, !op)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, [raiseTo(binOp(?st[1], ?st[0]), labelOfCtx(?ctx)),] ++ ?st[2:], ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule trappingBinOpRule := for
+  (!fid: int) in functionIds(),
+  (!op: int) in trappingBinOps(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, !op)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, [raiseTo(binOp(?st[1], ?st[0]), labelOfCtx(?ctx)),] ++ ?st[2:], ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(@LCtx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => Trap{!fid}(labelOf(?st[0]), !pc, ?gt, ?mem, ?at0, ?gt0),
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => Trap{!fid}(@H, ?from, ?gt, ?mem, ?at0, ?gt0)
+  ;
+
+rule cvtOpRule := for
+  (!fid: int) in functionIds(),
+  (!op: int)  in cvtOps(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, !op)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, [raiseTo(?st[0], labelOfCtx(?ctx)),] ++ ?st[1:], ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule trappingCvtOpRule := for
+  (!fid: int) in functionIds(),
+  (!op: int)  in trappingCvtOps(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, !op)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, [raiseTo(?st[0], labelOfCtx(?ctx)),] ++ ?st[1:], ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(@LCtx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => Trap{!fid}(labelOf(?st[0]), !pc, ?gt, ?mem, ?at0, ?gt0),
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => Trap{!fid}(@H, ?from, ?gt, ?mem, ?at0, ?gt0)
+  ;

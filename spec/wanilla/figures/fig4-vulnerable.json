@@ -1,0 +1,104 @@
+[
+  {
+    "function_id": 2,
+    "test_id": 0,
+    "param": ["PU", "PU", "PU"],
+    "global_in": ["PU"],
+    "result": ["PU"],
+    "memory_in":  { "data" : "PT", "size": "PT" },
+    "memory_out": { "data" : "PT", "size": "PT" },
+    "queries": {
+      "memory_size": "UNSAT",
+
+      "memory_area": [
+        { "start": 0,    "endInclusive": 1055, "result": "SAT" },
+        { "start": 1056, "endInclusive": 1120, "result": "SAT" },
+        { "start": 1121,                       "result": "SAT" }
+      ]
+    },
+
+    "imported_function" : [
+      {
+        "function_id": 0,
+        "global_out": [ "_" ],
+        "memory_out": { "data" : "_", "size": "_" }
+      }
+    ]
+  },
+
+  {
+    "function_id": 2,
+    "test_id": 1,
+    "param": ["PT", "PT", "PT"],
+    "global_in": ["PU"],
+    "result": ["PU"],
+    "memory_in":  { "data" : "PT", "size": "PT" },
+    "memory_out": { "data" : "PT", "size": "PT" },
+    "queries": {
+      "memory_size": "UNSAT",
+      "memory_data": "UNSAT"
+    },
+
+    "imported_function" : [
+      {
+        "function_id": 0,
+        "global_out": [ "_" ],
+        "memory_out": { "data" : "_", "size": "_" }
+      }
+    ]
+  },
+
+  {
+    "function_id": 2,
+    "test_id": 2,
+    "param": ["PU", "PU", "PT"],
+    "global_in": ["PU"],
+    "result": ["PU"],
+    "memory_in":  { "data" : "PT", "size": "PT" },
+    "memory_out": { "data" : "PT", "size": "PT" },
+    "queries": {
+      "memory_size": "UNSAT",
+
+      "memory_area": [
+        { "start": 0,    "endInclusive": 1055, "result": "SAT" },
+        { "start": 1056, "endInclusive": 1120, "result": "SAT" },
+        { "start": 1121,                       "result": "SAT" }
+      ]
+    },
+
+    "imported_function" : [
+      {
+        "function_id": 0,
+        "global_out": [ "_" ],
+        "memory_out": { "data" : "_", "size": "_" }
+      }
+    ]
+  },
+
+  {
+    "function_id": 2,
+    "test_id": 3,
+    "param": ["PT", "PT", "PU"],
+    "global_in": ["PU"],
+    "result": ["PU"],
+    "memory_in":  { "data" : "PT", "size": "PT" },
+    "memory_out": { "data" : "PT", "size": "PT" },
+    "queries": {
+      "memory_size": "UNSAT",
+
+      "memory_area": [
+        { "start": 0,    "endInclusive": 1055, "result": "SAT" },
+        { "start": 1056, "endInclusive": 1120, "result": "SAT" },
+        { "start": 1121,                       "result": "SAT" }
+      ]
+    },
+
+    "imported_function" : [
+      {
+        "function_id": 0,
+        "global_out": [ "_" ],
+        "memory_out": { "data" : "_", "size": "_" }
+      }
+    ]
+  }
+]

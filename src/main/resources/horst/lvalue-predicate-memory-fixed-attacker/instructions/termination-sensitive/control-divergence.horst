@@ -1,0 +1,216 @@
+rule brDivergenceRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BR),
+  (!br: int)  in breakDestinations(!fid, !pc),
+  (!dmy: bool) in onlyIf(!pc > !br)
+
+  clause [?p: Label, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0)
+      => Diverge{!fid}(@Ctx(?p,@Legal,!pc), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0)
+      => Diverge{!fid}(@Ctx(?p,@Illegal,?from), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule brIfDivergenceRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BRIF),
+  (!br: int)  in breakDestinations(!fid, !pc),
+  (!dmy: bool) in onlyIf(!pc > !br)
+
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    absneq(valueOf(?x), mkConst{0}())
+      => Diverge{!fid}(@Ctx(?p,labelOf(?x),!pc), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?x :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    absneq(valueOf(?x), mkConst{0}())
+      => Diverge{!fid}(@Ctx(?p,@Illegal,?from), ?at0, ?gt0, ?mem0),
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?p: Label, ?from: int]
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    absneq(valueOf(?x), mkConst{0}()),
+    raiseCtxTo{!pc}(?ctx, labelOf(?x)) = @Ctx(?p,@Illegal,?from)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule brTableDivergenceRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BRTABLE),
+  (!sz: int)  in sizeOfBreakTable(!fid, !pc),
+  (!idx: int) in interval(0, !sz - 1),
+  (!br: int)  in breakTableDestinations(!fid, !pc, !idx),
+  (!dmy: bool) in onlyIf(!pc > !br)
+
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    abseq(valueOf(?x), mkConst{!idx}())
+      => Diverge{!fid}(@Ctx(?p,labelOf(?x),!pc), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?x :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    abseq(valueOf(?x), mkConst{!idx}())
+      => Diverge{!fid}(@Ctx(?p,@Illegal,?from), ?at0, ?gt0, ?mem0),
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?p: Label, ?from: int]
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    raiseCtxTo{!pc}(?ctx, labelOf(?x)) = @Ctx(?p,@Illegal,?from)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule brTableDefaultDivergenceRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BRTABLE),
+  (!sz: int)  in sizeOfBreakTable(!fid, !pc),
+  (!br: int)  in breakTableDestinations(!fid, !pc, !sz-1),
+  (!dmy: bool) in onlyIf(!pc > !br)
+
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    absge(valueOf(?x), mkConst{!sz-1}())
+      => Diverge{!fid}(@Ctx(?p,labelOf(?x),!pc), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?x :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    absge(valueOf(?x), mkConst{!sz-1}())
+      => Diverge{!fid}(@Ctx(?p,@Illegal,?from), ?at0, ?gt0, ?mem0),
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?p: Label, ?from: int]
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    absge(valueOf(?x), mkConst{!sz-1}()),
+    raiseCtxTo{!pc}(?ctx, labelOf(?x)) = @Ctx(?p,@Illegal,?from)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule callDivergenceRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, CALLFUNCTION),
+  (!cid: int) in immediateForFunctionIdAndPc(!fid, !pc)
+
+  clause [?p: Label, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0)
+      => Diverge{!fid}(@Ctx(?p,@Legal,!pc), ?at0, ?gt0),
+  clause [?p: Label, ?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0)
+      => Diverge{!fid}(@Ctx(?p,@Illegal,?from), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?l: FlowLabel, ?from: int]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Diverge{!cid}(@Ctx(?p,?l,?from), ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => Diverge{!fid}(@Ctx(?p,?l,!pc), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Diverge{!cid}(@Ctx(?p,@Illegal,~1), ?at, ?ngt, ?nmem)
+      => Diverge{!fid}(@Ctx(?p,@Illegal,?from), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rt: tuple<LValue; rs{!cid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table
+         ,?from: int]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Return{!cid}(@Ctx(?p,@Illegal,?from), ?rt, ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    Diverge{!cid}(@Ctx(?p,@Illegal,?from), ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => MState{!fid, !pc + 1}(@Ctx(?p,@Illegal,!pc), ?rt ++ ?st[as{!cid}():], ?rgt, ?lt, ?rmem, ?rtbl, ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rt: tuple<LValue; rs{!cid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table
+         ,?from: int]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Return{!cid}(@Ctx(?p,@Illegal,?from), ?rt, ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    Diverge{!cid}(@Ctx(?p,@Illegal,?from), ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => ScopeExtend{!fid}(!pc, pcmax{!fid}()),
+  clause [?p: Label, ?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Diverge{!cid}(@Ctx(?p,@Illegal,~1), ?at, ?ngt, ?nmem)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule indirectCallDivergenceRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, CALLINDIRECT),
+  (!idx: int, !cid: int) in possibleCallTargets(!fid, !pc)
+
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0)
+      => Diverge{!fid}(@Ctx(?p,flub{2}([labelOf(?x),?ltbl]),!pc), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0)
+      => Diverge{!fid}(@Ctx(?p,@Illegal,?from), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?l: FlowLabel, ?from: int]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Diverge{!cid}(@Ctx(?p,?l,?from), ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => Diverge{!fid}(@Ctx(?p,?l,!pc), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Diverge{!cid}(@Ctx(?p,@Illegal,~1), ?at, ?ngt, ?nmem)
+      => Diverge{!fid}(@Ctx(?p,@Illegal,?from), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rt: tuple<LValue; rs{!cid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table
+         ,?from: int]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Return{!cid}(@Ctx(?p,@Illegal,?from), ?rt, ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    Diverge{!cid}(@Ctx(?p,@Illegal,?from), ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => MState{!fid, !pc + 1}(@Ctx(?p,@Illegal,!pc), ?rt ++ ?st[as{!cid}():], ?rgt, ?lt, ?rmem, ?rtbl, ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rt: tuple<LValue; rs{!cid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table
+         ,?from: int]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Return{!cid}(@Ctx(?p,@Illegal,?from), ?rt, ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    Diverge{!cid}(@Ctx(?p,@Illegal,?from), ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => ScopeExtend{!fid}(!pc, pcmax{!fid}()),
+  clause [?p: Label, ?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Diverge{!cid}(@Ctx(?p,@Illegal,~1), ?at, ?ngt, ?nmem)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;

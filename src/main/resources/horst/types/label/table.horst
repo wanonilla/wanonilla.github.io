@@ -1,0 +1,2 @@
+datatype TablePrecision := @TblPrecise | @TblImprecise;
+datatype Table := @Tbl<TablePrecision * FlowLabel>;

@@ -1,0 +1,581 @@
+rule functionScopeExtendRule := for
+  (!fid: int) in functionIds()
+
+  clause
+    true => ScopeExtend{!fid}(0, pcmax{!fid}())
+  ;
+
+rule nopRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, NOP)
+
+  clause [?ctx: Context, ?st: tuple<LValue; ss{!fid,!pc}()>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule blockRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in blocksForFunctionId(!fid)
+
+  clause [?ctx: Context, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule loopRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in loopsForFunctionId(!fid)
+
+  clause [?ctx: Context, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule endRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int, !next: int) in endsForFunctionId(!fid)
+
+  clause [?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !next}(@LCtx, ?st[ss{!fid,!pc}()-ss{!fid,!next}():], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?to: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ScopeExtend{!fid}(?from,?to),
+    !next < ?to
+      => MState{!fid, !next}(@HCtx(?from), ?st[ss{!fid,!pc}()-ss{!fid,!next}():], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?to: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ScopeExtend{!fid}(?from,?to),
+    !next >= ?to
+      => MStateToJoin{!fid, !next}(?from, ?st[ss{!fid,!pc}()-ss{!fid,!next}():], ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule joinRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in joinsForFunctionId(!fid)
+
+  clause [?from: int
+         ,?st1: tuple<LValue; ss{!fid,!pc}()>, ?gt1: tuple<LValue; gs()>, ?lt1: tuple<LValue; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>
+         ,?st2: tuple<LValue; ss{!fid,!pc}()>, ?gt2: tuple<LValue; gs()>, ?lt2: tuple<LValue; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>
+         ,?st3: tuple<LValue; ss{!fid,!pc}()>, ?gt3: tuple<LValue; gs()>, ?lt3: tuple<LValue; ls{!fid}()>, ?mem3: Memory]
+
+    MStateToJoin{!fid, !pc}(?from, ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01),
+    MStateToJoin{!fid, !pc}(?from, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02),
+
+    // Set new labels
+    joinTuples{ss{!fid,!pc}()}(?st1, ?st2, ?st3),
+    joinTuples{gs()}(?gt1, ?gt2, ?gt3),
+    joinTuples{ls{!fid}()}(?lt1, ?lt2, ?lt3),
+
+    ?mem3 = joinMemory(?mem1, ?mem2)
+
+      => MState{!fid, !pc}(@LCtx, ?st3, ?gt3, ?lt3, ?mem3, ?at01, ?gt01)
+  ;
+
+rule brForwardRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BR),
+  (!br: int)  in breakDestinations(!fid, !pc),
+  (!n: int)   in getAmountOfReturnValuesInBlock(!fid, !pc),
+  (!dmy: bool) in onlyIf(!pc <= !br)
+
+  clause [?ctx: Context, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !br}(?ctx, drop{ss{!fid,!pc}(), !n, ss{!fid,!pc}()-ss{!fid,!br}()}(?st), ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => ScopeExtend{!fid}(?from, !br)
+  ;
+
+rule brBackwardsRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BR),
+  (!br: int)  in breakDestinations(!fid, !pc),
+  (!n: int)   in getAmountOfReturnValuesInBlock(!fid, !pc),
+  (!dmy: bool) in onlyIf(!pc > !br)
+
+  clause [?ctx: Context, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?ngt: tuple<LValue; gs()>, ?nlt: tuple<LValue; ls{!fid}()>, ?nmem: Memory]
+
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+    overApproximateGlobals{!fid,!br}(?gt, ?ngt),
+    overApproximateLocals{!fid,!br}(?lt, ?nlt),
+    overApproximateMemoryGrow{!fid,!br}(?mem,?nmem)
+
+      => MState{!fid, !br}(?ctx, ?st[ss{!fid,!pc}()-ss{!fid,!br}():], ?ngt, ?nlt, ?nmem, ?at0, ?gt0)
+  ;
+
+rule brIfForwardsRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BRIF),
+  (!br: int)  in breakDestinations(!fid, !pc),
+  (!n: int)   in getAmountOfReturnValuesInBlock(!fid, !pc),
+  (!dmy: bool) in onlyIf(!pc <= !br)
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    flowsTo(labelOf(?x), labelOfCtx(?ctx)),
+
+    absneq(valueOf(?x), mkConst{0}())
+
+      => MState{!fid, !br}(?ctx, drop{ss{!fid,!pc}()-1, !n, ss{!fid,!pc}()-1-ss{!fid,!br}()}(?st), ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H,
+
+    absneq(valueOf(?x), mkConst{0}())
+
+      => MState{!fid, !br}(@HCtx(!pc), drop{ss{!fid,!pc}()-1, !n, ss{!fid,!pc}()-1-ss{!fid,!br}()}(?st), ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  // Extend scope
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H,
+    absneq(valueOf(?x), mkConst{0}())
+      => ScopeExtend{!fid}(!pc, !br),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+   MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+   absneq(valueOf(?x), mkConst{0}())
+     => ScopeExtend{!fid}(?from, !br)
+  ;
+
+rule brIfBackwardsRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BRIF),
+  (!br: int)  in breakDestinations(!fid, !pc),
+  (!n: int)   in getAmountOfReturnValuesInBlock(!fid, !pc),
+  (!dmy: bool) in onlyIf(!pc > !br)
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?ngt: tuple<LValue; gs()>, ?nlt: tuple<LValue; ls{!fid}()>, ?nmem: Memory]
+
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    flowsTo(labelOf(?x), labelOfCtx(?ctx)),
+
+    absneq(valueOf(?x), mkConst{0}()),
+
+    overApproximateGlobals{!fid,!br}(?gt, ?ngt),
+    overApproximateLocals{!fid,!br}(?lt, ?nlt),
+    overApproximateMemoryGrow{!fid,!br}(?mem,?nmem)
+
+    => MState{!fid, !br}(?ctx, ?st[ss{!fid,!pc}()-1-ss{!fid,!br}():], ?ngt, ?nlt, ?nmem, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?ngt: tuple<LValue; gs()>, ?nlt: tuple<LValue; ls{!fid}()>, ?nmem: Memory]
+
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H,
+
+    absneq(valueOf(?x), mkConst{0}()),
+
+    overApproximateGlobals{!fid,!br}(?gt, ?ngt),
+    overApproximateLocals{!fid,!br}(?lt, ?nlt),
+    overApproximateMemoryGrow{!fid,!br}(?mem,?nmem)
+
+    => MState{!fid, !br}(@HCtx(!pc), ?st[ss{!fid,!pc}()-1-ss{!fid,!br}():], ?ngt, ?nlt, ?nmem, ?at0, ?gt0),
+
+  // Extend scope
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H,
+    absneq(valueOf(?x), mkConst{0}())
+      => ScopeExtend{!fid}(!pc, !pc),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+   MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+   absneq(valueOf(?x), mkConst{0}())
+     => ScopeExtend{!fid}(?from, !pc)
+  ;
+
+rule brIfNoBrRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BRIF),
+  (!br: int)  in breakDestinations(!fid, !pc),
+  (!n: int)   in getAmountOfReturnValuesInBlock(!fid, !pc)
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(valueOf(?x), mkConst{0}()),
+    labelOf(?x) = @L
+      => MState{!fid, !pc + 1}(@LCtx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?to: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H,
+    abseq(valueOf(?x), mkConst{0}()),
+    ScopeExtend{!fid}(!pc,?to),
+    !pc+1 <= ?to
+      => MState{!fid, !pc + 1}(@HCtx(!pc), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?to: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(valueOf(?x), mkConst{0}()),
+    ScopeExtend{!fid}(?from,?to),
+    !pc+1 <= ?to
+      => MState{!fid, !pc + 1}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    !pc > !br,
+    labelOf(?x) = @H,
+    abseq(valueOf(?x), mkConst{0}())
+      => MStateToJoin{!fid, !pc+1}(!pc, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?x:LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(!pc), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    !pc > !br,
+    abseq(valueOf(?x), mkConst{0}())
+      => MStateToJoin{!fid, !pc+1}(!pc, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule brTableForwardsRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BRTABLE),
+  (!sz: int)  in sizeOfBreakTable(!fid, !pc),
+  (!n: int)   in getAmountOfReturnValuesInBlock(!fid, !pc),
+  (!idx: int) in interval(0, !sz - 1), // the last label is reached via the default rule
+  (!br: int)  in breakTableDestinations(!fid, !pc, !idx),
+  (!dmy: bool) in onlyIf(!pc <= !br)
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?nst: tuple<LValue; ss{!fid,!br}()>]
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    flowsTo(labelOf(?x), labelOfCtx(?ctx)),
+    abseq(valueOf(?x), mkConst{!idx}())
+      => MState{!fid, !br}(?ctx, drop{ss{!fid,!pc}()-1, !n, ss{!fid,!pc}()-1-ss{!fid,!br}()}(?st), ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?nst: tuple<LValue; ss{!fid,!br}()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H,
+    abseq(valueOf(?x), mkConst{!idx}())
+      => MState{!fid, !br}(@HCtx(!pc), drop{ss{!fid,!pc}()-1, !n, ss{!fid,!pc}()-1-ss{!fid,!br}()}(?st), ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  // Scope extend
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H,
+    abseq(valueOf(?x), mkConst{!idx}())
+      => ScopeExtend{!fid}(!pc, !br),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(valueOf(?x), mkConst{!idx}())
+      => ScopeExtend{!fid}(?from, !br)
+  ;
+
+rule brTableBackwardsRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BRTABLE),
+  (!sz: int)  in sizeOfBreakTable(!fid, !pc),
+  (!n: int)   in getAmountOfReturnValuesInBlock(!fid, !pc),
+  (!idx: int) in interval(0, !sz - 1), // the last label is reached via the default rule
+  (!br: int)  in breakTableDestinations(!fid, !pc, !idx),
+  (!dmy: bool) in onlyIf(!pc > !br)
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?ngt: tuple<LValue; gs()>, ?nlt: tuple<LValue; ls{!fid}()>, ?nmem: Memory]
+
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    flowsTo(labelOf(?x), labelOfCtx(?ctx)),
+
+    abseq(valueOf(?x), mkConst{!idx}()),
+
+    overApproximateGlobals{!fid,!br}(?gt, ?ngt),
+    overApproximateLocals{!fid,!br}(?lt, ?nlt),
+    overApproximateMemoryGrow{!fid,!br}(?mem,?nmem)
+
+      => MState{!fid, !br}(?ctx, ?st[ss{!fid,!pc}()-1-ss{!fid,!br}():], ?ngt, ?nlt, ?nmem, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?ngt: tuple<LValue; gs()>, ?nlt: tuple<LValue; ls{!fid}()>, ?nmem: Memory]
+
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H,
+
+    abseq(valueOf(?x), mkConst{!idx}()),
+
+    overApproximateGlobals{!fid,!br}(?gt, ?ngt),
+    overApproximateLocals{!fid,!br}(?lt, ?nlt),
+    overApproximateMemoryGrow{!fid,!br}(?mem,?nmem)
+
+      => MState{!fid, !br}(@HCtx(!pc), ?st[ss{!fid,!pc}()-1-ss{!fid,!br}():], ?ngt, ?nlt, ?nmem, ?at0, ?gt0),
+
+  // Scope extend
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H,
+    abseq(valueOf(?x), mkConst{!idx}())
+      => ScopeExtend{!fid}(!pc, !pc),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(valueOf(?x), mkConst{!idx}())
+      => ScopeExtend{!fid}(?from, !pc)
+  ;
+
+rule brTableDefaultForwardsRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BRTABLE),
+  (!sz: int)  in sizeOfBreakTable(!fid, !pc),
+  (!n: int)   in getAmountOfReturnValuesInBlock(!fid, !pc),
+  (!br: int)  in breakTableDestinations(!fid, !pc, !sz - 1),
+  (!dmy: bool) in onlyIf(!pc <= !br)
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    flowsTo(labelOf(?x), labelOfCtx(?ctx)),
+    absge(valueOf(?x), mkConst{!sz-1}())
+
+      => MState{!fid, !br}(?ctx, drop{ss{!fid,!pc}()-1, !n, ss{!fid,!pc}()-1-ss{!fid,!br}()}(?st), ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H,
+
+    absge(valueOf(?x), mkConst{!sz-1}())
+
+      => MState{!fid, !br}(@HCtx(!pc), drop{ss{!fid,!pc}()-1, !n, ss{!fid,!pc}()-1-ss{!fid,!br}()}(?st), ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  // Scope extend
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H,
+    absge(valueOf(?x), mkConst{!sz-1}())
+      => ScopeExtend{!fid}(!pc, !br),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    absge(valueOf(?x), mkConst{!sz-1}())
+      => ScopeExtend{!fid}(?from, !br)
+  ;
+
+rule brTableDefaultBackwardsRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BRTABLE),
+  (!sz: int)  in sizeOfBreakTable(!fid, !pc),
+  (!n: int)   in getAmountOfReturnValuesInBlock(!fid, !pc),
+  (!br: int)  in breakTableDestinations(!fid, !pc, !sz - 1),
+  (!dmy: bool) in onlyIf(!pc > !br)
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?ngt: tuple<LValue; gs()>, ?nlt: tuple<LValue; ls{!fid}()>, ?nmem: Memory]
+
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    flowsTo(labelOf(?x), labelOfCtx(?ctx)),
+
+    absge(valueOf(?x), mkConst{!sz-1}()),
+
+    overApproximateGlobals{!fid,!br}(?gt, ?ngt),
+    overApproximateLocals{!fid,!br}(?lt, ?nlt),
+    overApproximateMemoryGrow{!fid,!br}(?mem, ?nmem)
+
+      => MState{!fid, !br}(?ctx, ?st[ss{!fid,!pc}()-1-ss{!fid,!br}():], ?ngt, ?nlt, ?nmem, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?ngt: tuple<LValue; gs()>, ?nlt: tuple<LValue; ls{!fid}()>, ?nmem: Memory]
+
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H,
+
+    absge(valueOf(?x), mkConst{!sz-1}()),
+
+    overApproximateGlobals{!fid,!br}(?gt, ?ngt),
+    overApproximateLocals{!fid,!br}(?lt, ?nlt),
+    overApproximateMemoryGrow{!fid,!br}(?mem, ?nmem)
+
+      => MState{!fid, !br}(@HCtx(!pc), ?st[ss{!fid,!pc}()-1-ss{!fid,!br}():], ?ngt, ?nlt, ?nmem, ?at0, ?gt0),
+
+  // Scope extend
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H,
+    absge(valueOf(?x), mkConst{!sz-1}())
+      => ScopeExtend{!fid}(!pc, !pc),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    absge(valueOf(?x), mkConst{!sz-1}())
+      => ScopeExtend{!fid}(?from, !pc)
+  ;
+
+rule ifThenElseRule := for
+  (!fid: int) in functionIds(),
+  //talk about this with Aleksandr
+  //(!pc: int)  in pcsForFunctionIdAndOpcode(!fid, IF),
+  (!pc: int)  in ifs(!fid),
+  (!else: int) in elseForIf(!fid, !pc),
+  (!ifEnd: int, !elseEnd: int) in endForIf(!fid, !pc)
+
+  // Then
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    flowsTo(labelOf(?x), labelOfCtx(?ctx)),
+    absneq(valueOf(?x), mkConst{0}())
+      => MState{!fid, !pc + 1}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H,
+    absneq(valueOf(?x), mkConst{0}())
+      => MState{!fid, !pc + 1}(@HCtx(!pc), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  // Else
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    flowsTo(labelOf(?x), labelOfCtx(?ctx)),
+    abseq(valueOf(?x), mkConst{0}())
+      => MState{!fid, !else}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H,
+    abseq(valueOf(?x), mkConst{0}())
+      => MState{!fid, !else}(@HCtx(!pc), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  // Scope extend
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H
+      => ScopeExtend{!fid}(!pc, !ifEnd),
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H
+      => ScopeExtend{!fid}(!pc, !elseEnd),
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => ScopeExtend{!fid}(?from, !ifEnd),
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => ScopeExtend{!fid}(?from, !elseEnd)
+  ;
+
+rule callRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, CALLFUNCTION),
+  (!cid: int) in immediateForFunctionIdAndPc(!fid, !pc)
+
+  clause [?ctx: Context, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory]
+
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    match (?mem,?nmem) with
+    | (@Mem(l,_,s,m),@Mem(nl,_,ns,nm)) => l = nl && labelOf(s) = labelOf(ns) &&  nm = m
+    | _ => false
+
+      => MState{!cid, 0}(mkCtx(labelOfCtx(?ctx)), [], ?ngt, ?at ++ [mkLConst{0}(); ls{!cid}() - as{!cid}()], ?nmem, ?at, ?ngt),
+
+  clause [?ctx: Context, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rl: Label, ?rbr: int, ?rt: tuple<LValue; rs{!cid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory]
+
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Return{!cid}(?rl, ?rbr, ?rt, ?rgt, ?rmem, ?at, ?ngt),
+    labelOfCtx(?ctx) = mkLabel(?rl = @H && ?rbr = 0)
+
+      => MState{!fid, !pc + 1}(?ctx, ?rt ++ ?st[as{!cid}():], ?rgt, ?lt, ?rmem, ?at0, ?gt0)
+  ;
+
+rule indirectCallRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, CALLINDIRECT),
+  (!idx: int, !cid: int) in possibleCallTargets(!fid, !pc)
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory, ?nctx: bool]
+
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+    abseq(valueOf(?x), mkConst{!idx}()),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    match (?mem,?nmem) with
+    | (@Mem(l,_,s,m),@Mem(nl,_,ns,nm)) => l = nl && labelOf(s) = labelOf(ns) &&  nm = m
+    | _ => false
+
+      => MState{!cid, 0}(mkCtx(lub{2}([labelOfCtx(?ctx),labelOf(?x)])), [], ?ngt, ?at ++ [mkLConst{0}(); ls{!cid}() - as{!cid}()], ?nmem, ?at, ?ngt),
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rl: Label, ?rbr: int, ?rgt: tuple<LValue; gs()>, ?rt: tuple<LValue; rs{!cid}()>, ?rmem: Memory]
+
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    flowsTo(labelOf(?x), labelOfCtx(?ctx)),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Return{!cid}(?rl, ?rbr, ?rt, ?rgt, ?rmem, ?at, ?ngt),
+    labelOfCtx(?ctx) = mkLabel(?rl = @H && ?rbr = 0)
+      => MState{!fid, !pc + 1}(?ctx, ?rt ++ ?st[as{!cid}():], ?rgt, ?lt, ?rmem, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rl: Label, ?rbr: int, ?rgt: tuple<LValue; gs()>, ?rt: tuple<LValue; rs{!cid}()>, ?rmem: Memory]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H,
+    abseq(valueOf(?x), mkConst{!idx}()),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Return{!cid}(@H, 0, ?rt, ?rgt, ?rmem, ?at, ?ngt)
+      => MStateToJoin{!fid, !pc + 1}(!pc, ?rt ++ ?st[as{!cid}():], ?rgt, ?lt, ?rmem, ?at0, ?gt0)
+  ;
+
+rule functionExitRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in exitPointsForFunctionId(!fid)
+
+  clause [?st: tuple<LValue; ss{!fid,!pc}()>, ?rt: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => ReturnToJoin{!fid}(@L, !pc, ?st[:rs{!fid}()], ?gt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?rt: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?from != 0
+      => ReturnToJoin{!fid}(@H, ?from, ?st[:rs{!fid}()], ?gt, ?mem, ?at0, ?gt0),
+
+  clause [?st: tuple<LValue; ss{!fid,!pc}()>, ?rt: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(0), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => Return{!fid}(@H, 0, ?st[:rs{!fid}()], ?gt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?rt: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+     => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule returnJoinRule := for
+  (!fid: int) in functionIds()
+
+  clause [?l: Label, ?pc: int
+         ,?rt1: tuple<LValue; rs{!fid}()>, ?gt1: tuple<LValue; gs()>, ?mem1: Memory, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>
+         ,?rt2: tuple<LValue; rs{!fid}()>, ?gt2: tuple<LValue; gs()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>
+         ,?rt3: tuple<LValue; rs{!fid}()>, ?gt3: tuple<LValue; gs()>, ?mem3: Memory]
+
+    ReturnToJoin{!fid}(?l, ?pc, ?rt1, ?gt1, ?mem1, ?at01, ?gt01),
+    ReturnToJoin{!fid}(?l, ?pc, ?rt2, ?gt2, ?mem2, ?at02, ?gt02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02),
+
+    // Set new labels
+    joinTuples{rs{!fid}()}(?rt1,?rt2,?rt3),
+    joinTuples{gs()}(?gt1,?gt2,?gt3),
+    ?mem3 = joinMemory(?mem1, ?mem2)
+
+      => Return{!fid}(?l, ?pc, ?rt3, ?gt3, ?mem3, ?at01, ?gt01)
+  ;

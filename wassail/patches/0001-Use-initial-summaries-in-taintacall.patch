@@ -1,0 +1,29 @@
+From 488e04d60b812b0f0a6207f91e382313f1d9852a Mon Sep 17 00:00:00 2001
+From: anon
+Date: Tue, 1 Apr 2025 12:00:49 +0200
+Subject: [PATCH 1/2] Use initial summaries in taintacall.
+
+---
+ lib/analysis/taintcall/taintcall.ml | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/lib/analysis/taintcall/taintcall.ml b/lib/analysis/taintcall/taintcall.ml
+index d1c5833..e2c36d6 100644
+--- a/lib/analysis/taintcall/taintcall.ml
++++ b/lib/analysis/taintcall/taintcall.ml
+@@ -38,7 +38,11 @@ let analyze_inter : Wasm_module.t -> Int32.t list list -> (Spec.t Cfg.t * Domain
+        (* Run the taint analysis *)
+        let annotated_scc = scc (* Int32Map.map scc ~f:Relational.Transfer.dummy_annotate *) in
+        let summaries = Int32Map.mapi cfgs_and_summaries ~f:(fun ~key:_idx ~data:(_spec_cfg, _taint_cfg, summary) -> summary) in
+-       let results = Inter.analyze wasm_mod annotated_scc summaries in
++       let summaries' = List.fold_left wasm_mod.imported_funcs
++           ~init:summaries
++           ~f:(fun summaries (idx, name, (args, ret)) ->
++               Int32Map.set summaries ~key:idx ~data:(Int32Map.empty, (Taint_summary.of_import name wasm_mod.nglobals args ret))) in
++       let results = Inter.analyze wasm_mod annotated_scc summaries' in
+        Int32Map.mapi results ~f:(fun ~key:idx ~data:(taint_cfg, summary) ->
+            let spec_cfg = Int32Map.find_exn scc idx in
+            Printf.printf "%ld call summary: %s\n" idx (Domain.Call.to_string (fst summary));
+-- 
+2.44.1
+

@@ -1,0 +1,10 @@
+@inproceedings{barthe2019verifying,
+  title={Verifying relational properties using trace logic},
+  author={Barthe, Gilles and Eilers, Renate and Georgiou, Pamina and Gleiss, Bernhard and Kov{\'a}cs, Laura and Maffei, Matteo},
+  booktitle={2019 Formal Methods in Computer Aided Design (FMCAD)},
+  pages={170--178},
+  year={2019},
+  organization={IEEE}
+}
+
+Example code: https://github.com/gleiss/rapid/tree/master/examples/relational/non-interference

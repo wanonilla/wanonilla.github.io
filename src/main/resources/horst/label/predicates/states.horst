@@ -1,0 +1,32 @@
+pred Init{
+    !fid: int
+}:  tuple<Value; as{!fid}()> *
+    tuple<Value; gs()>
+    ;
+
+pred MState{
+    !fid: int,                      // currently executing function
+    !pc: int                        // currently executing op code position
+}:  Context *                       // context
+    tuple<Value; ss{!fid,!pc}()> *  // the actual stack
+    tuple<Value; gs()> *            // store for the global variables
+    tuple<Value; ls{!fid}()> *      // store for the local variables
+    Memory *                        // the memory of the module
+    tuple<Value; as{!fid}()> *      // the original arguments for the function
+    tuple<Value; gs()>              // the original global variables
+    ;
+
+pred ScopeExtend{!fid: int}: int * int;
+
+pred Trap{!fid: int}: Label * int * tuple<Value; gs()> * Memory * tuple<Value; as{!fid}()> * tuple<Value; gs()>;
+
+pred Return{
+    !fid: int                   // function that return
+}:  Label *                     // pc label
+    int *                       // br pc
+    tuple<Value; rs{!fid}()> *  // store for the returned values
+    tuple<Value; gs()> *        // store for the global variables
+    Memory *                    // (possibly modified) memory of the module
+    tuple<Value; as{!fid}()> *  // the original arguments for the function
+    tuple<Value; gs()>          // the original global variables
+    ;

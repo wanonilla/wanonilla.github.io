@@ -1,0 +1,5 @@
+pred Trap{!fid: int}: Label * int * tuple<LValue; gs()> * Memory * tuple<LValue; as{!fid}()> * tuple<LValue; gs()>;
+
+pred TrapToJoin{!fid: int}: Label * int * tuple<LValue; gs()> * Memory * tuple<LValue; as{!fid}()> * tuple<LValue; gs()>;
+
+pred Loop{!fid: int}: Label * int * tuple<LValue; as{!fid}()> * tuple<LValue; gs()>;

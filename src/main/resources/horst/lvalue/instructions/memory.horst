@@ -1,0 +1,73 @@
+rule loadRule := for
+  (!fid: int)     in functionIds(),
+  (!op: int)      in loadOps(),
+  (!pc: int)      in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!offset: int)  in memoryOffsetForFunctionIdAndPc(!fid, !pc)
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?v: Value, ?l: Label]
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    boundOK{memOpTbw{!op}(), !offset}(valueOf(sizeOfMem(?mem)), valueOf(?x)),
+    ?v = memLoad{!op, !offset}(dataOfMem(?mem), valueOf(?x)),
+    flowsTo(lub{2}([labelOf(?x),labelOfMem(?mem)]), labelOfCtx(?ctx))
+      => MState{!fid, !pc + 1}(?ctx, @LVal(?v,labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?x1: LValue, ?st1: tuple<LValue; ss{!fid,!pc}()-1>, ?lt1: tuple<LValue; ls{!fid}()>, ?gt1: tuple<LValue; gs()>, ?mem1: Memory, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>
+         ,?x2: LValue, ?st2: tuple<LValue; ss{!fid,!pc}()-1>, ?lt2: tuple<LValue; ls{!fid}()>, ?gt2: tuple<LValue; gs()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>
+         ,?v1: Value, ?v2: Value]
+
+    MState{!fid, !pc}(@LCtx, ?x1 :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01),
+    MState{!fid, !pc}(@LCtx, ?x2 :: ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02),
+
+    lub{2}([labelOf(?x1),labelOfMem(?mem1)]) = @H,
+    labelOf(?x1) = labelOf(?x2),
+    labelOfMem(?mem1) = labelOfMem(?mem2),
+
+    boundOK{memOpTbw{!op}(), !offset}(valueOf(sizeOfMem(?mem1)), valueOf(?x1)),
+    boundOK{memOpTbw{!op}(), !offset}(valueOf(sizeOfMem(?mem2)), valueOf(?x2)),
+
+    ?v1 = memLoad{!op, !offset}(dataOfMem(?mem1), valueOf(?x1)),
+    ?v2 = memLoad{!op, !offset}(dataOfMem(?mem2), valueOf(?x2))
+
+      => MState{!fid, !pc + 1}(@LCtx, joinHigh(?v1,?v2) :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01)
+  ;
+
+rule storeRule := for
+  (!fid: int)     in functionIds(),
+  (!op: int)      in storeOps(),
+  (!pc: int)      in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!offset: int)  in memoryOffsetForFunctionIdAndPc(!fid, !pc)
+
+  clause [?ctx: Context, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?res: array<Value>, ?l: Label]
+    MState{!fid, !pc}(?ctx, ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    boundOK{memOpTbw{!op}(), !offset}(valueOf(sizeOfMem(?mem)), valueOf(?y)),
+    ?res = memStore{!op, !offset}(dataOfMem(?mem), valueOf(?y), valueOf(?x)),
+    ?l = lub{4}([labelOf(?x), labelOf(?y), labelOfMem(?mem), labelOfCtx(?ctx)])
+      => MState{!fid, !pc + 1}(?ctx, ?st, ?gt, ?lt, setLabelOfMem(setDataOfMem(?mem, ?res), ?l), ?at0, ?gt0)
+  ;
+
+rule sizeRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, MEMORYSIZE)
+
+  clause [?ctx: Context, ?st: tuple<LValue; ss{!fid,!pc}()>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, raiseTo(sizeOfMem(?mem), labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule growRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, MEMORYGROW)
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?size: Value, ?lsize: Label]
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+    ?size = grow(valueOf(?x), valueOf(sizeOfMem(?mem)), valueOf(maxOfMem(?mem))),
+    ?lsize = lub{4}([labelOfCtx(?ctx),labelOf(?x),labelOf(sizeOfMem(?mem)),labelOf(maxOfMem(?mem))])
+
+      => MState{!fid, !pc + 1}(?ctx, raiseTo(sizeOfMem(?mem), labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, setSizeOfMem(?mem, @LVal(?size,?lsize)), ?at0, ?gt0)
+  ;

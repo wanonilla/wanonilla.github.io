@@ -1,0 +1,6 @@
+test testReturn expect SAT for
+  (!fid: int) in startFunctionId()
+
+  [?ctx: Context, ?rt: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    Return{!fid}(?ctx, ?rt, ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0)
+  ;

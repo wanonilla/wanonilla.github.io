@@ -1,0 +1,104 @@
+[
+  {
+    "function_name": "update_game_state",
+    "test_id": 0,
+    "param": ["PU", "PU", "PU"],
+    "global_in": [],
+    "result": ["PU"],
+    "memory_in":  { "data" : "PT", "size": "PT" },
+    "memory_out": { "data" : "PT", "size": "PT" },
+    "queries": {
+      "memory_size": "UNSAT",
+
+      "memory_area": [
+        { "start": 0,    "endInclusive": 1039, "result": "SAT" },
+        { "start": 1040, "endInclusive": 1104, "result": "SAT" },
+        { "start": 1105,                       "result": "SAT" }
+      ]
+    },
+
+    "imported_function" : [
+      {
+        "function_name": "eval",
+        "global_out": [],
+        "memory_out": { "data" : "_", "size": "_" }
+      }
+    ]
+  },
+
+  {
+    "function_name": "update_game_state",
+    "test_id": 1,
+    "param": ["PT", "PT", "PT"],
+    "global_in": [],
+    "result": ["PU"],
+    "memory_in":  { "data" : "PT", "size": "PT" },
+    "memory_out": { "data" : "PT", "size": "PT" },
+    "queries": {
+      "memory_size": "UNSAT",
+      "memory_data": "UNSAT"
+    },
+
+    "imported_function" : [
+      {
+        "function_name": "eval",
+        "global_out": [],
+        "memory_out": { "data" : "_", "size": "_" }
+      }
+    ]
+  },
+
+  {
+    "function_name": "update_game_state",
+    "test_id": 2,
+    "param": ["PU", "PU", "PT"],
+    "global_in": [],
+    "result": ["PU"],
+    "memory_in":  { "data" : "PT", "size": "PT" },
+    "memory_out": { "data" : "PT", "size": "PT" },
+    "queries": {
+      "memory_size": "UNSAT",
+
+      "memory_area": [
+        { "start": 0,    "endInclusive": 1039, "result": "SAT" },
+        { "start": 1040, "endInclusive": 1104, "result": "SAT" },
+        { "start": 1105,                       "result": "SAT" }
+      ]
+    },
+
+    "imported_function" : [
+      {
+        "function_name": "eval",
+        "global_out": [],
+        "memory_out": { "data" : "_", "size": "_" }
+      }
+    ]
+  },
+
+  {
+    "function_name": "update_game_state",
+    "test_id": 3,
+    "param": ["PT", "PT", "PU"],
+    "global_in": [],
+    "result": ["PU"],
+    "memory_in":  { "data" : "PT", "size": "PT" },
+    "memory_out": { "data" : "PT", "size": "PT" },
+    "queries": {
+      "memory_size": "UNSAT",
+
+      "memory_area": [
+        { "start": 0,    "endInclusive": 1039, "result": "SAT" },
+        { "start": 1040, "endInclusive": 1104, "result": "SAT" },
+        { "start": 1105,                       "result": "SAT" }
+      ]
+    },
+
+    "imported_function" : [
+      {
+        "function_name": "eval",
+        "global_out": [],
+        "memory_out": { "data" : "_", "size": "_" }
+      }
+    ]
+  }
+]

@@ -1,0 +1,152 @@
+[
+  {
+    "function_id": 3,
+    "test_id": 0,
+    "result": [
+      "PT"
+    ],
+    "imported_function": [
+      {
+        "function_id": 0,
+        "context": "PT",
+        "table_out": "_",
+        "result": [
+          "PT"
+        ]
+      },
+      {
+        "function_id": 1,
+        "context": "PT",
+        "result": [
+          "ST"
+        ]
+      },
+      {
+        "function_id": 2,
+        "context": "PT"
+      }
+    ],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 3,
+    "test_id": 1,
+    "result": [
+      "PT"
+    ],
+    "imported_function": [
+      {
+        "function_id": 0,
+        "context": "PT",
+        "table_out": "PT",
+        "result": [
+          "PT"
+        ]
+      },
+      {
+        "function_id": 1,
+        "context": "PT",
+        "result": [
+          "ST"
+        ]
+      },
+      {
+        "function_id": 2,
+        "context": "PT"
+      }
+    ],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 3,
+    "test_id": 2,
+    "result": [
+      "ST"
+    ],
+    "table_out": "ST",
+    "imported_function": [
+      {
+        "function_id": 0,
+        "context": "PT",
+        "table_out": "ST",
+        "result": [
+          "PT"
+        ]
+      },
+      {
+        "function_id": 1,
+        "context": "ST",
+        "result": [
+          "ST"
+        ]
+      },
+      {
+        "function_id": 2,
+        "context": "PT",
+        "table_in": "ST"
+      }
+    ],
+    "queries": {
+      "result": "UNSAT",
+      "table": "UNSAT",
+      "imported_function": [
+        {
+          "function_id": 1,
+          "context": "UNSAT"
+        },
+        {
+          "function_id": 2,
+          "table": "UNSAT"
+        }
+      ]
+    }
+  },
+  {
+    "function_id": 3,
+    "test_id": 2,
+    "result": [
+      "PT"
+    ],
+    "table_out": "PT",
+    "imported_function": [
+      {
+        "function_id": 0,
+        "context": "PT",
+        "table_out": "ST",
+        "result": [
+          "PT"
+        ]
+      },
+      {
+        "function_id": 1,
+        "context": "PT",
+        "result": [
+          "ST"
+        ]
+      },
+      {
+        "function_id": 2,
+        "context": "PT",
+        "table_in": "PT"
+      }
+    ],
+    "queries": {
+      "result": "SAT",
+      "table": "SAT",
+      "imported_function": [
+        {
+          "function_id": 1,
+          "context": "SAT"
+        },
+        {
+          "function_id": 2,
+          "table": "SAT"
+        }
+      ]
+    }
+  }
+]

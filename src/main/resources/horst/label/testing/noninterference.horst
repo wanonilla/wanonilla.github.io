@@ -1,0 +1,99 @@
+test testNoninterferencePositiveResult expect UNSAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!dmy: bool) in resultSafe()
+
+  [?l: Label, ?pc: int, ?rt: tuple<Value; rs{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    ReturnCall{!fid}(?l, ?pc, ?rt, ?gt, ?mem, ?at0, ?gt0),
+
+    for (!idx: int) in interval(0,rs{!fid}()),
+        (!sec: bool) in resultSecretForPosition(!idx):
+      || (~!sec && labelOf(?rt[!idx]) = @H)
+  ;
+
+test testNoninterferenceNegativeResult expect SAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!dmy: bool) in resultLeak()
+
+  [?l: Label, ?pc: int, ?rt: tuple<Value; rs{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    ReturnCall{!fid}(?l, ?pc, ?rt, ?gt, ?mem, ?at0, ?gt0),
+
+    for (!idx: int) in interval(0,rs{!fid}()),
+        (!sec: bool) in resultSecretForPosition(!idx):
+      || (~!sec && labelOf(?rt[!idx]) = @H)
+  ;
+
+test testNoninterferencePositiveGlobal expect UNSAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!dmy: bool) in globalSafe()
+
+  [?l: Label, ?pc: int, ?rt: tuple<Value; rs{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    ReturnCall{!fid}(?l, ?pc, ?rt, ?gt, ?mem, ?at0, ?gt0),
+
+    for (!idx: int) in interval(0,gs()),
+        (!sec: bool) in globalOutSecretForPosition(!idx):
+      || (~!sec && labelOf(?gt[!idx]) = @H)
+  ;
+
+test testNoninterferenceNegativeGlobal expect SAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!dmy: bool) in globalLeak()
+
+  [?l: Label, ?pc: int, ?rt: tuple<Value; rs{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    ReturnCall{!fid}(?l, ?pc, ?rt, ?gt, ?mem, ?at0, ?gt0),
+
+    for (!idx: int) in interval(0,gs()),
+        (!sec: bool) in globalOutSecretForPosition(!idx):
+      || (~!sec && labelOf(?gt[!idx]) = @H)
+  ;
+
+test testNoninterferencePositiveMemoryData expect UNSAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!dmy: bool) in memoryDataSafe()
+
+  [?l: Label, ?pc: int, ?rt: tuple<Value; rs{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    ReturnCall{!fid}(?l, ?pc, ?rt, ?gt, ?mem, ?at0, ?gt0),
+
+    for (!ldata: bool) in memoryDataOutSecret():
+      || (~!ldata && dataOfMem(?mem) = @H)
+  ;
+
+test testNoninterferenceNegativeMemoryData expect SAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!dmy: bool) in memoryDataLeak()
+
+  [?l: Label, ?pc: int, ?rt: tuple<Value; rs{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    ReturnCall{!fid}(?l, ?pc, ?rt, ?gt, ?mem, ?at0, ?gt0),
+
+    for (!ldata: bool) in memoryDataOutSecret():
+      || (~!ldata && dataOfMem(?mem) = @H)
+  ;
+
+test testNoninterferencePositiveMemorySize expect UNSAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!dmy: bool) in memorySizeSafe()
+
+  [?l: Label, ?pc: int, ?rt: tuple<Value; rs{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    ReturnCall{!fid}(?l, ?pc, ?rt, ?gt, ?mem, ?at0, ?gt0),
+
+    for (!lsize: bool) in memorySizeOutSecret():
+      || (~!lsize && sizeOfMem(?mem) = @H)
+  ;
+
+test testNoninterferenceNegativeMemorySize expect SAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!dmy: bool) in memorySizeLeak()
+
+  [?l: Label, ?pc: int, ?rt: tuple<Value; rs{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    ReturnCall{!fid}(?l, ?pc, ?rt, ?gt, ?mem, ?at0, ?gt0),
+
+    for (!lsize: bool) in memorySizeOutSecret():
+      || (~!lsize && sizeOfMem(?mem) = @H)
+  ;

@@ -1,0 +1,49 @@
+rule globalGetRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, GLOBALGET),
+  (!idx: int) in immediateForFunctionIdAndPc(!fid, !pc)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, [raiseTo(?gt[!idx], labelOfCtx(?ctx)),] ++ ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule globalSetRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, GLOBALSET),
+  (!idx: int) in immediateForFunctionIdAndPc(!fid, !pc)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, ?st[1:], ?gt[:!idx] ++ [raiseTo(?st[0], labelOfCtx(?ctx)),] ++ ?gt[!idx+1:], ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule localGetRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, LOCALGET),
+  (!idx: int) in immediateForFunctionIdAndPc(!fid, !pc)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, [raiseTo(?lt[!idx], labelOfCtx(?ctx)),] ++ ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule localSetRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, LOCALSET),
+  (!idx: int) in immediateForFunctionIdAndPc(!fid, !pc)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, ?st[1:], ?gt, ?lt[:!idx] ++ [raiseTo(?st[0], labelOfCtx(?ctx)),] ++ ?lt[!idx+1:], ?mem, ?at0, ?gt0)
+  ;
+
+rule localTeeRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, LOCALTEE),
+  (!idx: int) in immediateForFunctionIdAndPc(!fid, !pc)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, ?st, ?gt, ?lt[:!idx] ++ [raiseTo(?st[0], labelOfCtx(?ctx)),] ++ ?lt[!idx+1:], ?mem, ?at0, ?gt0)
+  ;

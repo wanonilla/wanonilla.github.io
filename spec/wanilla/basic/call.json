@@ -1,0 +1,254 @@
+[
+  {
+    "function_id": 0,
+    "test_id": 0,
+    "param": ["PT"],
+    "result": ["PT"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 0,
+    "test_id": 1,
+    "param": ["PT"],
+    "result": ["ST"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 0,
+    "test_id": 2,
+    "param": ["ST"],
+    "result": ["PT"],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 0,
+    "test_id": 3,
+    "param": ["ST"],
+    "result": ["ST"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 0,
+    "param": ["PT", "PT"],
+    "result": ["PT", "PT"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 1,
+    "param": ["PT", "PT"],
+    "result": ["ST", "PT"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 2,
+    "param": ["PT", "PT"],
+    "result": ["PT", "ST"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 3,
+    "param": ["PT", "PT"],
+    "result": ["ST", "ST"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 4,
+    "param": ["PT", "ST"],
+    "result": ["PT", "PT"],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 5,
+    "param": ["PT", "ST"],
+    "result": ["ST", "PT"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 6,
+    "param": ["PT", "ST"],
+    "result": ["PT", "ST"],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 7,
+    "param": ["PT", "ST"],
+    "result": ["ST", "ST"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 8,
+    "param": ["ST", "PT"],
+    "result": ["PT", "PT"],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 9,
+    "param": ["ST", "PT"],
+    "result": ["ST", "PT"],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 10,
+    "param": ["ST", "PT"],
+    "result": ["PT", "ST"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 11,
+    "param": ["ST", "PT"],
+    "result": ["ST", "ST"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 12,
+    "param": ["ST", "ST"],
+    "result": ["PT", "PT"],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 13,
+    "param": ["ST", "ST"],
+    "result": ["ST", "PT"],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 14,
+    "param": ["ST", "ST"],
+    "result": ["PT", "ST"],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 15,
+    "param": ["ST", "ST"],
+    "result": ["ST", "ST"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 2,
+    "test_id": 0,
+    "param": ["PT", "PT"],
+    "result": ["PT"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 2,
+    "test_id": 1,
+    "param": ["PT", "PT"],
+    "result": ["ST"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 2,
+    "test_id": 2,
+    "param": ["PT", "ST"],
+    "result": ["PT"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 2,
+    "test_id": 3,
+    "param": ["PT", "ST"],
+    "result": ["ST"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 2,
+    "test_id": 4,
+    "param": ["ST", "PT"],
+    "result": ["PT"],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 2,
+    "test_id": 5,
+    "param": ["ST", "PT"],
+    "result": ["ST"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 2,
+    "test_id": 6,
+    "param": ["ST", "ST"],
+    "result": ["PT"],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 2,
+    "test_id": 7,
+    "param": ["ST", "ST"],
+    "result": ["ST"],
+    "queries": {
+      "result": "UNSAT"
+    }
+  }
+]

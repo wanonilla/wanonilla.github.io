@@ -1,0 +1,85 @@
+const ALIGN := 8;
+
+// return a value where the rightmost !i bytes are 255
+op rightMask(i: int): Value := ilshr{64}(mkConst{pow{8}(256) -1}(), mkValue(64 - i * 8));
+
+// return a value where the leftmost !i bytes are 255
+op leftMask(i: int): Value := inot{64}(rightMask(8-i));
+
+// return a value where the bytes !i to !i+7 are 255
+op midMask{!i: int}(): Value := mkConst{(pow{4}(256) - 1) * pow{!i}(256)}();
+
+// return a value where the bytes but !i to !i+7 are 255
+op antiMidMask(i: int): Value := isub{64}(mkValue(pow{8}(256) - 1), imul{64}(mkValue(pow{4}(256) - 1), ishl{64}(mkValue(1), mkValue(8*i))));
+op antiMidMaskW(i: int, bc: int): Value := isub{64}(mkValue(pow{8}(256) - 1), imul{64}(rightMask(bc), ishl{64}(mkValue(1), mkValue(8*i))));
+op midMaskW(i: int, bc: int): Value := imul{64}(rightMask(bc), ishl{64}(mkValue(1), mkValue(8*i)));
+
+op truncateBytes{!bw: int, !tbw: int}(x: Value): Value :=
+  (!bw = !tbw) ? (x) : (iand{64}(x, rightMask(!tbw/8)))
+  ;
+
+op extendTruncate{!bw: int, !lbw: int, !sx: bool}(x: Value): Value :=
+  match (!sx) with
+  | true => truncateBytes{64, !bw}(extends{!lbw, 64}(x))
+  | _    => truncateBytes{64, !lbw}(x)
+  ;
+
+/* ========================================================================= */
+/* ================================ Store ================================== */
+/* ========================================================================= */
+
+op storeSingleCell{!bw: int, !tbw: int}(mem: array<Value>, pos: int, i: int, x: Value): array<Value> :=
+  store mem pos ior{64}(iand{64}(select mem pos, antiMidMaskW(i, !tbw/8)), ishl{64}(truncateBytes{!bw, !tbw}(x), mkValue(i * 8)))
+  ;
+
+// !bw:  the bitwidth of the stack value that is going to be stored
+// !tbw: the bitwidth of the memory operation
+op storeTwoCells{!bw: int, !tbw: int}(mem: array<Value>, pos: int, i: int, x: Value): array<Value> :=
+  store (store mem pos ior{64}(iand{64}(select mem pos, rightMask(i)),
+                                        ishl{64}(x, mkValue(i * 8))))
+        (pos+1)
+        ior{64}(iand{64}(select mem (pos+1), leftMask((ALIGN + (ALIGN - (!tbw/8))) - i)),
+                ishru{64}(truncateBytes{!bw, !tbw}(x), mkValue((8 - i) * 8)))
+  ;
+
+op write{!bw: int, !tbw: int}(mem: array<Value>, pos: int, j: int, x: Value): array<Value> :=
+  (j <= 8 - !tbw/8) ? (storeSingleCell{!bw, !tbw}(mem, pos, j, x)) : (storeTwoCells{!bw, !tbw}(mem, pos, j, x))
+  ;
+
+op wasmStore{!bw: int, !tbw: int, !offset: int}(mem: array<Value>, i: Value, x: Value): array<Value> := match (!bw, !tbw, (mkIntOfValue(i) + !offset) mod ALIGN, (mkIntOfValue(i) + !offset) / ALIGN) with
+  | (64, 64, 0, pos)  => store mem pos x
+  | (64, 64, j, pos)  => storeTwoCells{!bw, !tbw}(mem, pos, j, x)
+  | ( _,  8, j, pos)  => storeSingleCell{!bw, !tbw}(mem, pos, j, x)
+  // this case assumes that the !bw-!tbw-pairings are one of (64,32), (64,16), (32,32) or (32, 16)
+  | ( _,  _, j, pos)  => write{!bw, !tbw}(mem, pos, j, x)
+  // can't happen
+  | _        => mem
+  ;
+
+/* ========================================================================= */
+/* ================================= Load ================================== */
+/* ========================================================================= */
+
+op load{!bw: int, !lbw: int, !sx: bool}(mem: array<Value>, pos: int, i: int): Value :=
+  extendTruncate{!bw, !lbw, !sx}((i < 8 - !lbw/8) ? (ishru{64}(select mem pos, mkValue(i*8)))
+                                                  : (ior{64}(ishru{64}(select mem pos, mkValue(i*8)),
+                                                    ishl{64}(select mem (pos+1), mkValue(64 - i*8)))))
+  ;
+
+op load8{!bw: int, !sx: bool}(mem: array<Value>, pos: int, i: int): Value := extendTruncate{!bw, 8, !sx}(ishru{64}(select mem pos, mkValue(i*8)));
+
+op load64(mem: array<Value>, pos: int, i: int): Value :=
+  ior{64}(
+    ishru{64}(select mem pos, mkValue(i*8)),
+    ishl{64}(select mem (pos+1), mkValue(64 - i *8))
+  )
+  ;
+
+op wasmLoad{!bw: int, !lbw: int, !sx: bool, !offset: int}(mem: array<Value>, i: Value): Value := match (!bw, !lbw, !sx, (mkIntOfValue(i) + !offset) mod ALIGN, (mkIntOfValue(i) + !offset) / ALIGN) with
+  | (64, 64, _,   0, pos) => select mem pos
+  | (64, 64, _,  ri, pos) => load64(mem, pos, ri)
+  | ( _,  8, _,  ri, pos) => load8{!bw, !sx}(mem, pos, ri)
+  | ( _,  _, _,  ri, pos) => load{!bw, !lbw, !sx}(mem, pos, ri)
+  // can't happen
+  | _                     => mkConst{0}()
+  ;

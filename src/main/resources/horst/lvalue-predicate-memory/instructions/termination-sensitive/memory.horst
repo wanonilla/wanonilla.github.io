@@ -1,0 +1,70 @@
+rule loadTsniRule := for
+  (!fid: int)    in functionIds(),
+  (!op: int)     in loadOps(),
+  (!pc: int)     in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!offset: int) in memoryOffsetForFunctionIdAndPc(!fid, !pc)
+
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    igeu{64}(iadd{64}(valueOf(?x),mkConst{!offset + memOpTbw{!op}()/8}()), ishl{64}(valueOf(sizeOfMem(?mem), mkConst{16}())))
+      => TrapToJoin{!fid}(@Ctx(?p,flub{2}([labelOf(?x), labelOf(sizeOfMem(?mem))]),!pc), ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?p: Label, ?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?x :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    igeu{64}(iadd{64}(valueOf(?x),mkConst{!offset + memOpTbw{!op}()/8}()), ishl{64}(valueOf(sizeOfMem(?mem), mkConst{16}()))),
+    0 <= ?from
+      => TrapToJoin{!fid}(@Ctx(?p,@Illegal,?from), ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,~1), ?x :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    igeu{64}(iadd{64}(valueOf(?x),mkConst{!offset + memOpTbw{!op}()/8}()), ishl{64}(valueOf(sizeOfMem(?mem), mkConst{16}())))
+      => Trap{!fid}(@Ctx(?p,@Illegal,~1), ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?v: LValue]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    flub{2}([labelOf(?x), labelOf(sizeOfMem(?mem))]) = @Illegal
+      => MState{!fid, !pc}(@Ctx(?p,@Illegal,!pc), ?x :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?p: Label, ?from: int]
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    igeu{64}(iadd{64}(valueOf(?x),mkConst{!offset + memOpTbw{!op}()/8}()), ishl{64}(valueOf(sizeOfMem(?mem), mkConst{16}()))),
+    raiseCtxTo{!pc}(?ctx, flub{2}([labelOf(?x), labelOf(sizeOfMem(?mem))])) = @Ctx(?p,@Illegal,?from)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule storeTsniRule := for
+  (!fid: int)    in functionIds(),
+  (!op: int)     in storeOps(),
+  (!pc: int)     in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!offset: int) in memoryOffsetForFunctionIdAndPc(!fid, !pc)
+
+  clause [?p: Label, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+    igeu{64}(iadd{64}(valueOf(?y),mkConst{!offset + memOpTbw{!op}()/8}()), ishl{64}(valueOf(sizeOfMem(?mem), mkConst{16}())))
+      => TrapToJoin{!fid}(@Ctx(?p,flub{2}([labelOf(?y), labelOf(sizeOfMem(?mem))]),!pc), ?gt, ?mem, ?at0, ?gt0, ?mem0),
+
+  clause [?p: Label, ?from: int, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    igeu{64}(iadd{64}(valueOf(?y),mkConst{!offset + memOpTbw{!op}()/8}()), ishl{64}(valueOf(sizeOfMem(?mem), mkConst{16}()))),
+    0 <= ?from
+      => TrapToJoin{!fid}(@Ctx(?p,@Illegal,?from), ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?p: Label, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,~1), ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    igeu{64}(iadd{64}(valueOf(?y),mkConst{!offset + memOpTbw{!op}()/8}()), ishl{64}(valueOf(sizeOfMem(?mem), mkConst{16}())))
+      => Trap{!fid}(@Ctx(?p,@Illegal,~1), ?gt, ?mem, ?tbl, ?at0, ?gt0),
+
+  clause [?p: Label, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?res: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    flub{2}([labelOf(?y), labelOf(sizeOfMem(?mem))]) = @Illegal
+      => MState{!fid, !pc}(@Ctx(?p,@Illegal,!pc), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?ctx: Context, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?p: Label, ?from: int]
+    MState{!fid, !pc}(?ctx, ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    igeu{64}(iadd{64}(valueOf(?y),mkConst{!offset + memOpTbw{!op}()/8}()), ishl{64}(valueOf(sizeOfMem(?mem), mkConst{16}()))),
+    raiseCtxTo{!pc}(?ctx, flub{2}([labelOf(?y), labelOf(sizeOfMem(?mem))])) = @Ctx(?p,@Illegal,?from)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;

@@ -1,0 +1,45 @@
+op labelOfMem(memory: Memory): Label := match memory with
+  | @Mem(l, _, _, _) => l
+  | _                => @H // should never happen...
+  ;
+
+op setLabelOfMem(memory: Memory, l: Label): Memory := match memory with
+  | @Mem(_, mem, size, max) => @Mem(l, mem, size, max)
+  | _                       => memory // should never happen...
+  ;
+
+op dataOfMem(memory: Memory): array<Value> := match memory with
+  | @Mem(_, mem, _, _) => mem
+  | _                  => [freeValOrTop()] // should never happen...
+  ;
+
+op setDataOfMem(memory: Memory, mem: array<Value>): Memory := match memory with
+  | @Mem(l, _, size, max) => @Mem(l, mem, size, max)
+  | _                     => memory // should never happen...
+  ;
+
+op sizeOfMem(memory: Memory): LValue := match memory with
+  | @Mem(_, _, size, _) => size
+  | _                   => @LVal(freeValOrTop(),@H) // should never happen...
+  ;
+
+op setSizeOfMem(memory: Memory, size: LValue): Memory := match memory with
+  | @Mem(l, mem, _, max) => @Mem(l, mem, size, max)
+  | _                    => memory // should never happen...
+  ;
+
+op maxOfMem(mem: Memory): LValue := match mem with
+  | @Mem(_, _, _, max) => max
+  | _                  => @LVal(freeValOrTop(),@H)
+  ;
+
+op setMaxOfMem(memory: Memory, max: LValue): Memory := match memory with
+  | @Mem(l, mem, size, _) => @Mem(l, mem, size, max)
+  | _                     => memory // should never happen...
+  ;
+
+op joinMemory(x: Memory, y: Memory): Memory := match (x,y) with
+  | (@Mem(l1,d1,s1,m1),@Mem(l2,d2,s2,m2)) =>
+    @Mem(glb{2}([lub{2}([l1, l2]), mkLabel(d1 != d2)]), d1, join(s1, s2), join(m1, m2))
+  | _ => x // Should not happen!
+  ;

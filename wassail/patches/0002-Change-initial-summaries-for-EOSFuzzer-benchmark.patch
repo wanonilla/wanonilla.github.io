@@ -1,0 +1,48 @@
+From d1010c0ec40508ba15b8ea0f9b4c6a53f2c3fd2e Mon Sep 17 00:00:00 2001
+From: anon
+Date: Tue, 1 Apr 2025 12:01:07 +0200
+Subject: [PATCH 2/2] Change initial summaries for EOSFuzzer benchmark.
+
+---
+ lib/analysis/taint/taint_summary.ml | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/lib/analysis/taint/taint_summary.ml b/lib/analysis/taint/taint_summary.ml
+index 2c94b07..872e412 100644
+--- a/lib/analysis/taint/taint_summary.ml
++++ b/lib/analysis/taint/taint_summary.ml
+@@ -65,15 +65,15 @@ let top (cfg : 'a Cfg.t) (_vars : Var.Set.t) : t =
+ 
+ let of_import (name : string) (nglobals : Int32.t) (_args : Type.t list) (ret : Type.t list) : t =
+   match name with
+-  | "fd_write" | "fd_close" | "fd_seek" | "fd_fdstat_get" | "proc_exit" ->
++  | "tapos_block_num" | "tapos_block_prefix" ->
+     (* Globals are unchanged *)
+     let globals = List.init (Int32.to_int_exn nglobals) ~f:(fun i -> Taint_domain.Taint.taint (Var.Global i)) in
+-    (* Ret is untainted *)
++    (* Ret is tainted *)
+     let ret = match ret with
+       | [] -> None
+-      | _ :: [] -> Some Taint_domain.Taint.bottom
++      | _ :: [] -> Some Taint_domain.Taint.top
+       | _ -> failwith "more than one return value" in
+-    { globals; ret; mem = Taint_domain.Taint.top } (* XXX: We assume memory does not get tainted, which is definitely not always true (e.g., fd_write) *)
++    { globals; ret; mem = Taint_domain.Taint.bottom } (* XXX: We assume memory does not get tainted, which is definitely not always true (e.g., fd_write) *)
+   | _ ->
+     (* XXX: We assume globals are unchanged, might not always be the case! *)
+     Log.warn (Printf.sprintf "Imported function is not modelled: %s" name);
+@@ -81,9 +81,9 @@ let of_import (name : string) (nglobals : Int32.t) (_args : Type.t list) (ret :
+     (* Ret is tainted *)
+     let ret = match ret with
+       | [] -> None
+-      | _ :: [] -> Some Taint_domain.Taint.top
++      | _ :: [] -> Some Taint_domain.Taint.bottom
+       | _ -> failwith "more than one return value" in
+-    { globals; ret; mem = Taint_domain.Taint.top }
++    { globals; ret; mem = Taint_domain.Taint.bottom }
+ 
+ let initial_summaries (cfgs : 'a Cfg.t Int32Map.t) (module_ : Wasm_module.t) (typ : [`Bottom | `Top]) : t Int32Map.t =
+   List.fold_left module_.imported_funcs
+-- 
+2.44.1
+

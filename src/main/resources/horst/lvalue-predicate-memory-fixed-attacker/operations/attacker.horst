@@ -1,0 +1,6 @@
+op attackerToLabel{!att: int}(): Label := match !att with
+	| 0 => mkUntrusted()
+	| 1 => mkBot()
+	| 2 => mkTop()
+	| _ => mkSecret()
+	; 

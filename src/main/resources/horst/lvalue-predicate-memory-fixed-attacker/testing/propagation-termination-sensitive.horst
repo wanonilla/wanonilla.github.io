@@ -1,0 +1,18 @@
+pred TrapCall{!fid: int}: Context * tuple<LValue;gs()> * Memory * Table * tuple<LValue; as{!fid}()> * tuple<LValue; gs()> * Memory;
+pred DivergeCall{!fid: int}: Context * tuple<LValue; as{!fid}()> * tuple<LValue; gs()> * Memory;
+
+rule propagateTsniRule := for
+  (!fid: int) in startFunctionId()
+
+  clause [?p: Label, ?l: FlowLabel, ?from: int, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    Trap{!fid}(@Ctx(?p, ?l, ?from), ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    Init{!fid}(?p, ?at0, ?gt0, ?mem0),
+    0 <= ?from
+      => TrapCall{!fid}(@Ctx(?p, ?l, ?from), ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?p: Label, ?l: FlowLabel, ?from: int, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    Diverge{!fid}(@Ctx(?p, ?l, ?from), ?at0, ?gt0, ?mem0),
+    Init{!fid}(?p, ?at0, ?gt0, ?mem0),
+    0 <= ?from
+      => DivergeCall{!fid}(@Ctx(?p, ?l, ?from), ?at0, ?gt0, ?mem0)
+  ;

@@ -1,0 +1,28 @@
+rule importedFunctionRule := for
+  (!fid: int) in importedFunctionIds()
+
+  clause [?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>
+         ,?rt: tuple<Value; rs{!fid}()>, ?rgt: tuple<Value; gs()>, ?rdata: array<Value>, ?rsize: Value]
+    MState{!fid, 0}([], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+    for (!i: int) in interval(0,rs{!fid}()),
+        (!bw: int) in bitwidthForResult(!fid,!i):
+       && isInRange{!bw}(?rt[!i]),
+
+    for (!i: int) in interval(0,gs()),
+        (!bw: int) in bitwidthForGlobal(!i),
+        (!pass: bool, !cg: bool, !ig: bool) in globalOutLabelForImportedFunctionAndPosition(!fid,!i):
+      && (!pass)
+          ? (?gt[!i] = ?rgt[!i])
+          : (isInRange{!bw}(?rgt[!i])),
+
+    for (!pass: bool, !cd: bool, !id: bool) in memoryDataOutLabelForImportedFunction(!fid):
+      && (~!pass || dataOfMem(?mem) = ?rdata),
+
+    for (!pass: bool, !cs: bool, !is: bool) in memorySizeOutLabelForImportedFunction(!fid):
+      && (!pass)
+          ? (sizeOfMem(?mem) = ?rsize)
+          : (ileu{64}(sizeOfMem(?mem),?rsize) && ileu{64}(?rsize,mkConst{mms() * pow{16}(2)}()))
+
+       => Return{!fid}(?rt, ?rgt, @Mem(?rdata, ?rsize), ?at0, ?gt0)
+  ;

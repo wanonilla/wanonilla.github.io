@@ -1,0 +1,42 @@
+[
+  {
+    "function_id": 0,
+    "test_id": 0,
+    "param": ["PT"],
+    "global_in": ["PT"],
+    "global_out": ["PT"],
+    "queries": {
+      "global": "UNSAT"
+    }
+  },
+  {
+    "function_id": 0,
+    "test_id": 1,
+    "param": ["PT"],
+    "global_in": ["PT"],
+    "global_out": ["ST"],
+    "queries": {
+      "global": "UNSAT"
+    }
+  },
+  {
+    "function_id": 0,
+    "test_id": 2,
+    "param": ["ST"],
+    "global_in": ["PT"],
+    "global_out": ["PT"],
+    "queries": {
+      "global": "SAT"
+    }
+  },
+  {
+    "function_id": 0,
+    "test_id": 3,
+    "param": ["ST"],
+    "global_in": ["PT"],
+    "global_out": ["ST"],
+    "queries": {
+      "global": "UNSAT"
+    }
+  }
+]

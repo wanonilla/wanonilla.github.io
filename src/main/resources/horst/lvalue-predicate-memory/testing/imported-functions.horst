@@ -1,0 +1,127 @@
+test testNoninterferenceImportedFunctionContextUnsat expect UNSAT for
+  (!fid: int) in importedFunctionIds(),
+  (!cid: int) in importCallContextSafe(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    for (!cc: bool, !ic: bool) in contextLabelForImportedFunction(!fid):
+      || flowsTo(mkLabel(!cc, !ic), perspectiveOfCtx(?ctx)) && labelOfCtx(?ctx) = @Illegal
+  ;
+
+test testNoninterferenceImportedFunctionContextSat expect SAT for
+  (!fid: int) in importedFunctionIds(),
+  (!cid: int) in importCallContextLeak(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    for (!cc: bool, !ic: bool) in contextLabelForImportedFunction(!fid):
+      || flowsTo(mkLabel(!cc, !ic), perspectiveOfCtx(?ctx)) && labelOfCtx(?ctx) = @Illegal
+  ;
+
+test testNoninterferenceImportedFunctionParamsUnsat expect UNSAT for
+  (!fid: int) in importedFunctionIds(),
+  (!cid: int) in importCallArgumentSafe(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+    for (!idx: int) in interval(0,as{!fid}()),
+        (!ca: bool, !ia: bool) in argumentLabelForImportedFunctionAndPosition(!fid,!idx):
+      || flowsTo(mkLabel(!ca, !ia), perspectiveOfCtx(?ctx)) && labelOf(?at0[!idx]) = @Illegal
+  ;
+
+test testNoninterferenceImportedFunctionParamsSat expect SAT for
+  (!fid: int) in importedFunctionIds(),
+  (!cid: int) in importCallArgumentLeak(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+    for (!idx: int) in interval(0,as{!fid}()),
+        (!ca: bool, !ia: bool) in argumentLabelForImportedFunctionAndPosition(!fid,!idx):
+      || flowsTo(mkLabel(!ca, !ia), perspectiveOfCtx(?ctx)) && labelOf(?at0[!idx]) = @Illegal
+  ;
+
+test testNoninterferenceImportedFunctionGlobalsUnsat expect UNSAT for
+  (!fid: int) in importedFunctionIds(),
+  (!cid: int) in importCallGlobalSafe(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalInLabelForImportedFunctionAndPosition(!fid,!idx):
+      || flowsTo(mkLabel(!cg, !ig), perspectiveOfCtx(?ctx)) && labelOf(?gt0[!idx]) = @Illegal
+  ;
+
+test testNoninterferenceImportedFunctionGlobalsSat expect SAT for
+  (!fid: int) in importedFunctionIds(),
+  (!cid: int) in importCallGlobalLeak(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalInLabelForImportedFunctionAndPosition(!fid,!idx):
+      || flowsTo(mkLabel(!cg, !ig), perspectiveOfCtx(?ctx)) && labelOf(?gt0[!idx]) = @Illegal
+  ;
+
+test testNoninterferenceImportedFunctionMemoryDataUnsat expect UNSAT for
+  (!fid: int) in importedFunctionIds(),
+  (!cid: int) in importCallMemoryDataSafe(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+    for (!cd: bool, !id: bool) in memoryDataInLabelForImportedFunction(!fid):
+      || flowsTo(mkLabel(!cd, !id), perspectiveOfCtx(?ctx)) && labelOf(?v) = @Illegal
+  ;
+
+test testNoninterferenceImportedFunctionMemoryDataSat expect SAT for
+  (!fid: int) in importedFunctionIds(),
+  (!cid: int) in importCallMemoryDataLeak(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+    for (!cd: bool, !id: bool) in memoryDataInLabelForImportedFunction(!fid):
+      || flowsTo(mkLabel(!cd, !id), perspectiveOfCtx(?ctx)) && labelOf(?v) = @Illegal
+  ;
+
+test testNoninterferenceImportedFunctionMemorySizeUnsat expect UNSAT for
+  (!fid: int) in importedFunctionIds(),
+  (!cid: int) in importCallMemorySizeSafe(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+    for (!cs: bool, !is: bool) in memoryDataInLabelForImportedFunction(!fid):
+      || flowsTo(mkLabel(!cs, !is), perspectiveOfCtx(?ctx)) && labelOf(?size) = @Illegal
+  ;
+
+test testNoninterferenceImportedFunctionMemorySizeSat expect SAT for
+  (!fid: int) in importedFunctionIds(),
+  (!cid: int) in importCallMemorySizeLeak(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+    for (!cs: bool, !is: bool) in memoryDataInLabelForImportedFunction(!fid):
+      || flowsTo(mkLabel(!cs, !is), perspectiveOfCtx(?ctx)) && labelOf(?size) = @Illegal
+  ;
+
+test testNoninterferenceImportedFunctionTableUnsat expect UNSAT for
+  (!fid: int) in importedFunctionIds(),
+  (!cid: int) in importCallTableSafe(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ptbl: TablePrecision, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, @Tbl(?ptbl,@Illegal), ?at0, ?gt0, ?mem0),
+    for (!ct: bool, !it: bool) in tableInLabelForImportedFunction(!fid):
+      || flowsTo(mkLabel(!ct, !it), perspectiveOfCtx(?ctx))
+  ;
+
+test testNoninterferenceImportedFunctionTableSat expect SAT for
+  (!fid: int) in importedFunctionIds(),
+  (!cid: int) in importCallTableLeak(!fid)
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ptbl: TablePrecision, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, @Tbl(?ptbl,@Illegal), ?at0, ?gt0, ?mem0),
+    for (!ct: bool, !it: bool) in tableInLabelForImportedFunction(!fid):
+      || flowsTo(mkLabel(!ct, !it), perspectiveOfCtx(?ctx))
+  ;

@@ -1,0 +1,9 @@
+op labelOfCtx(ctx: Context): Label := match ctx with
+  | @HCtx(_) => @H
+  | _        => @L
+  ;
+
+op mkCtx(l: Label): Context := match l with
+  | @H => @HCtx(0)
+  | _  => @LCtx
+  ;

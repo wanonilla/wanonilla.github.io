@@ -1,0 +1,316 @@
+rule unreachableTsniRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, UNREACHABLE)
+
+  clause [?p: Label, ?st: tuple<LValue; ss{!fid,!pc}()>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0)
+      => TrapToJoin{!fid}(@Ctx(?p,@Legal,!pc), ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    0 <= ?from
+      => TrapToJoin{!fid}(@Ctx(?p,@Illegal,?from), ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?st: tuple<LValue; ss{!fid,!pc}()>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,~1), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0)
+      => Trap{!fid}(@Ctx(?p,@Illegal,~1), ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule callTsniRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, CALLFUNCTION),
+  (!cid: int) in immediateForFunctionIdAndPc(!fid, !pc)
+
+  clause [?p: Label, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table
+         ,?l: FlowLabel, ?from: int]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Trap{!cid}(@Ctx(?p,?l,?from), ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => TrapToJoin{!fid}(@Ctx(?p,?l,!pc), ?rgt, ?rmem, ?rtbl, ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Trap{!cid}(@Ctx(?p,@Illegal,~1), ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => TrapToJoin{!fid}(@Ctx(?p,@Illegal,?from), ?rgt, ?rmem, ?rtbl, ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,~1), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Trap{!cid}(@Ctx(?p,@Illegal,~1), ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem)
+      => Trap{!fid}(@Ctx(?p,@Illegal,~1), ?rgt, ?rmem, ?rtbl, ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rt: tuple<LValue; rs{!cid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table
+         ,?tgt: tuple<LValue; gs()>, ?tmem: Memory, ?ttbl: Table
+         ,?from: int]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Return{!cid}(@Ctx(?p,@Illegal,?from), ?rt, ?rgt, ?rmem, ?rtbl, ?at, ?ngt),
+    Trap{!cid}(@Ctx(?p,@Illegal,?from), ?tgt, ?tmem, ?ttbl, ?at, ?ngt),
+    0 <= ?from
+      => MState{!fid, !pc + 1}(@Ctx(?p,@Illegal,!pc), ?rt ++ ?st[as{!cid}():], ?rgt, ?lt, ?rmem, ?rtbl, ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rt: tuple<LValue; rs{!cid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table
+         ,?tgt: tuple<LValue; gs()>, ?tmem: Memory, ?ttbl: Table
+         ,?from: int]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Return{!cid}(@Ctx(?p,@Illegal,?from), ?rt, ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    Trap{!cid}(@Ctx(?p,@Illegal,?from), ?tgt, ?tmem, ?ttbl, ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => ScopeExtend{!fid}(!pc, pcmax{!fid}()),
+  clause [?p: Label, ?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table, ?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?st, ?gt, ?lt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Trap{!cid}(@Ctx(?p,@Illegal,~1), ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule indirectCallTsniRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, CALLINDIRECT),
+  (!idx: int, !cid: int) in possibleCallTargets(!fid, !pc)
+
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table
+         ,?l: FlowLabel, ?from: int]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Trap{!cid}(@Ctx(?p,?l,?from), ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => TrapToJoin{!fid}(@Ctx(?p,?l,!pc), ?rgt, ?rmem, ?rtbl, ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Trap{!cid}(@Ctx(?p,@Illegal,~1), ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => TrapToJoin{!fid}(@Ctx(?p,@Illegal,?from), ?rgt, ?rmem, ?rtbl, ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Trap{!cid}(@Ctx(?p,@Illegal,~1), ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem)
+      => Trap{!fid}(@Ctx(?p,@Illegal,~1), ?rgt, ?rmem, ?rtbl, ?at0, ?gt0, ?mem0),
+
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rt: tuple<LValue; rs{!cid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table
+         ,?tgt: tuple<LValue; gs()>, ?tmem: Memory, ?ttbl: Table
+         ,?from: int]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Return{!cid}(@Ctx(?p,@Illegal,?from), ?rt, ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    Trap{!cid}(@Ctx(?p,@Illegal,?from), ?tgt, ?tmem, ?ttbl, ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => MState{!fid, !pc + 1}(@Ctx(?p,@Illegal,!pc), ?rt ++ ?st[as{!cid}():], ?rgt, ?lt, ?rmem, ?rtbl, ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rt: tuple<LValue; rs{!cid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table
+         ,?tgt: tuple<LValue; gs()>, ?tmem: Memory, ?ttbl: Table
+         ,?from: int]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Return{!cid}(@Ctx(?p,@Illegal,?from), ?rt, ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    Trap{!cid}(@Ctx(?p,@Illegal,?from), ?tgt, ?tmem, ?ttbl, ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => ScopeExtend{!fid}(!pc, pcmax{!fid}()),
+  clause [?p: Label, ?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table, ?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Trap{!cid}(@Ctx(?p,@Illegal,~1), ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule indirectCallHavokTsniRule := for
+  (!fid: int)  in functionIds(),
+  (!pc: int)   in pcsForFunctionIdAndOpcode(!fid, CALLINDIRECT),
+  (!cid: int)  in possibleHavokCallTargets(!fid, !pc)
+
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table
+         ,?l: FlowLabel, ?from: int]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblImprecise, ?ltbl), ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Trap{!cid}(@Ctx(?p,?l,?from), ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => TrapToJoin{!fid}(@Ctx(?p,?l,!pc), ?rgt, ?rmem, ?rtbl, ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblImprecise, ?ltbl), ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Trap{!cid}(@Ctx(?p,@Illegal,~1), ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => TrapToJoin{!fid}(@Ctx(?p,@Illegal,?from), ?rgt, ?rmem, ?rtbl, ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblImprecise, ?ltbl), ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Trap{!cid}(@Ctx(?p,@Illegal,~1), ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem)
+      => Trap{!fid}(@Ctx(?p,@Illegal,~1), ?rgt, ?rmem, ?rtbl, ?at0, ?gt0, ?mem0),
+
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rt: tuple<LValue; rs{!cid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table
+         ,?tgt: tuple<LValue; gs()>, ?tmem: Memory, ?ttbl: Table
+         ,?from: int]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblImprecise, ?ltbl), ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Return{!cid}(@Ctx(?p,@Illegal,?from), ?rt, ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    Trap{!cid}(@Ctx(?p,@Illegal,?from), ?tgt, ?tmem, ?ttbl, ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => MState{!fid, !pc + 1}(@Ctx(?p,@Illegal,!pc), ?rt ++ ?st[as{!cid}():], ?rgt, ?lt, ?rmem, ?rtbl, ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory
+         ,?rt: tuple<LValue; rs{!cid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table
+         ,?tgt: tuple<LValue; gs()>, ?tmem: Memory, ?ttbl: Table
+         ,?from: int]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblImprecise, ?ltbl), ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Return{!cid}(@Ctx(?p,@Illegal,?from), ?rt, ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem),
+    Trap{!cid}(@Ctx(?p,@Illegal,?from), ?tgt, ?tmem, ?ttbl, ?at, ?ngt, ?nmem),
+    0 <= ?from
+      => ScopeExtend{!fid}(!pc, pcmax{!fid}()),
+  clause [?p: Label, ?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?rtbl: Table, ?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>, ?nmem: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblImprecise, ?ltbl), ?at0, ?gt0, ?mem0),
+    overApproximateCallArguments{!cid}(reverse{as{!cid}()}(?st[:as{!cid}()]), ?at),
+    overApproximateCallGlobals{!cid}(?gt,?ngt),
+    overApproximateCallMemory{!cid}(?mem,?nmem),
+    Trap{!cid}(@Ctx(?p,@Illegal,~1), ?rgt, ?rmem, ?rtbl, ?at, ?ngt, ?nmem)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule indirectCallTsniRuleTrap := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, CALLINDIRECT)
+
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+    for (!idx:int, !cid: int) in possibleCallTargets(!fid, !pc): && absneq(valueOf(?x), mkConst{!idx}())
+      => TrapToJoin{!fid}(@Ctx(?p,flub{2}([labelOf(?x),?ltbl]),~1), ?gt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+    for (!idx:int, !cid: int) in possibleCallTargets(!fid, !pc): && absneq(valueOf(?x), mkConst{!idx}()),
+    0 <= ?from
+      => TrapToJoin{!fid}(@Ctx(?p,@Illegal,?from), ?gt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+    for (!idx:int, !cid: int) in possibleCallTargets(!fid, !pc): && absneq(valueOf(?x), mkConst{!idx}())
+      => Trap{!fid}(@Ctx(?p,@Illegal,~1), ?gt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+    for (!idx:int, !cid: int) in possibleCallTargets(!fid, !pc): && absneq(valueOf(?x), mkConst{!idx}()),
+    flub{2}([labelOf(?x),?ltbl]) = @Illegal
+      => MState{!fid, !pc}(@Ctx(?p,@Illegal,!pc), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?p: Label, ?from: int]
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblPrecise,?ltbl), ?at0, ?gt0, ?mem0),
+    for (!idx:int, !cid: int) in possibleCallTargets(!fid, !pc): && absneq(valueOf(?x), mkConst{!idx}()),
+    raiseCtxTo{!pc}(?ctx, flub{2}([labelOf(?x),?ltbl])) = @Ctx(?p,@Illegal,?from)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule indirectCallHavokTsniRuleTrap := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, CALLINDIRECT)
+
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblImprecise, ?ltbl), ?at0, ?gt0, ?mem0)
+      => TrapToJoin{!fid}(@Ctx(?p,flub{2}([labelOf(?x),?ltbl]),~1), ?gt, ?mem, @Tbl(@TblImprecise, ?ltbl), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,?from), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblImprecise, ?ltbl), ?at0, ?gt0, ?mem0),
+    0 <= ?from
+      => TrapToJoin{!fid}(@Ctx(?p,@Illegal,?from), ?gt, ?mem, @Tbl(@TblImprecise, ?ltbl), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Illegal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblImprecise, ?ltbl), ?at0, ?gt0, ?mem0)
+      => Trap{!fid}(@Ctx(?p,@Illegal,~1), ?gt, ?mem, @Tbl(@TblImprecise, ?ltbl), ?at0, ?gt0, ?mem0),
+  clause [?p: Label, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(@Ctx(?p,@Legal,~1), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblImprecise, ?ltbl), ?at0, ?gt0, ?mem0),
+    flub{2}([labelOf(?x),?ltbl]) = @Illegal
+      => MState{!fid, !pc}(@Ctx(?p,@Illegal,!pc), ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblImprecise, ?ltbl), ?at0, ?gt0, ?mem0),
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?ltbl: FlowLabel, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?p: Label, ?from: int]
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, @Tbl(@TblImprecise, ?ltbl), ?at0, ?gt0, ?mem0),
+    raiseCtxTo{!pc}(?ctx, flub{2}([labelOf(?x),?ltbl])) = @Ctx(?p,@Illegal,?from)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule trapJoinTsniRule := for
+  (!fid: int) in functionIds()
+
+  clause [?ctx: Context, ?i: Value
+         ,?gt1: tuple<LValue; gs()>, ?v1: LValue, ?size1: LValue, ?tbl1: Table, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?mem01: Memory
+         ,?gt2: tuple<LValue; gs()>, ?v2: LValue, ?size2: LValue, ?tbl2: Table, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>, ?mem02: Memory
+         ,?gt3: tuple<LValue; gs()>, ?v3: LValue, ?size3: LValue]
+
+    TrapToJoin{!fid}(?ctx, ?gt1, @Mem(?i, ?v1, ?size1), ?tbl1, ?at01, ?gt01, ?mem01),
+    TrapToJoin{!fid}(?ctx, ?gt2, @Mem(?i, ?v1, ?size2), ?tbl1, ?at02, ?gt02, ?mem02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs()}(?gt01,?gt02),
+    lowEqMem(?mem01,?mem02),
+
+    // Set new labels
+    joinTuples{gs()}(?gt1, ?gt2, ?gt3),
+    join(?v1,?v2,?v3),
+    join(?size1,?size2,?size3)
+
+      => Trap{!fid}(?ctx, ?gt3, @Mem(?i, ?v3, ?size3), ?tbl1, ?at01, ?gt01, ?mem01)
+  ;

@@ -1,0 +1,117 @@
+test trappingPos expect UNSAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!dmy: bool) in trapSafe()
+
+  [?pc: int
+  ,?gt1: tuple<LValue; gs()>, ?mem1: Memory, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>
+  ,?rt2: tuple<LValue;rs{!fid}()>, ?gt2: tuple<LValue; gs()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>]
+
+    TrapCall{!fid}(@H, ?pc, ?gt1, ?mem1, ?at01, ?gt01),
+    ReturnCall{!fid}(@H, ?pc, ?rt2, ?gt2, ?mem2, ?at02, ?gt02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02)
+  ;
+
+test trappingNeg expect SAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!dmy: bool) in trapLeak()
+
+  [?pc: int
+  ,?gt1: tuple<LValue; gs()>, ?mem1: Memory, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>
+  ,?rt2: tuple<LValue;rs{!fid}()>, ?gt2: tuple<LValue; gs()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>]
+
+    TrapCall{!fid}(@H, ?pc, ?gt1, ?mem1, ?at01, ?gt01),
+    ReturnCall{!fid}(@H, ?pc, ?rt2, ?gt2, ?mem2, ?at02, ?gt02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02)
+  ;
+
+test possibleInfiniteLoopsPos expect UNSAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!dmy: bool) in divergenceSafe()
+
+  [?pc: int
+  ,?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>
+  ,?rt2: tuple<LValue; rs{!fid}()>, ?gt2: tuple<LValue; gs()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>]
+
+    Loop{!fid}(@H, ?pc, ?at01, ?gt01),
+    ReturnCall{!fid}(@H, ?pc, ?rt2, ?gt2, ?mem2, ?at02, ?gt02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02)
+  ;
+
+test possibleInfiniteLoopsNeg expect SAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!dmy: bool) in divergenceLeak()
+
+  [?pc: int
+  ,?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>
+  ,?rt2: tuple<LValue; rs{!fid}()>, ?gt2: tuple<LValue; gs()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>]
+
+    Loop{!fid}(@H, ?pc, ?at01, ?gt01),
+    ReturnCall{!fid}(@H, ?pc, ?rt2, ?gt2, ?mem2, ?at02, ?gt02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02)
+  ;
+
+test globalTrapPos expect UNSAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!dmy: bool) in globalTrapSafe()
+
+  [?l: Label, ?pc: int, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    TrapCall{!fid}(?l, ?pc, ?gt, ?mem, ?at0, ?gt0),
+
+    for (!idx: int) in interval(0,gs()),
+        (!sec: bool) in globalOutSecretForPosition(!idx):
+      || (~!sec && labelOf(?gt[!idx]) = @H)
+  ;
+
+test globalTrapNeg expect SAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!dmy: bool) in globalTrapLeak()
+
+  [?l: Label, ?pc: int, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    TrapCall{!fid}(?l, ?pc, ?gt, ?mem, ?at0, ?gt0),
+
+    for (!idx: int) in interval(0,gs()),
+        (!sec: bool) in globalOutSecretForPosition(!idx):
+      || (~!sec && labelOf(?gt[!idx]) = @H)
+  ;
+
+test memoryTrapPos expect UNSAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!dmy: bool) in globalTrapSafe()
+
+  [?l: Label, ?pc: int, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    TrapCall{!fid}(?l, ?pc, ?gt, ?mem, ?at0, ?gt0),
+
+    for (!ldata: bool, !lsize: bool, !lmax: bool) in memoryOutSecret():
+      || (
+        match ?mem with
+        | @Mem(ldata,size,max) => (~!ldata && ldata = @H) || (~!lsize && labelOf(size) = @H) || (~!lmax && labelOf(max) = @H)
+        | _ => true
+      )
+  ;
+
+test memoryTrapNeg expect SAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!dmy: bool) in memoryTrapLeak()
+
+  [?l: Label, ?pc: int, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    TrapCall{!fid}(?l, ?pc, ?gt, ?mem, ?at0, ?gt0),
+
+    for (!ldata: bool, !lsize: bool, !lmax: bool) in memoryOutSecret():
+      || (
+        match ?mem with
+        | @Mem(ldata,size,max) => (~!ldata && ldata = @H) || (~!lsize && labelOf(size) = @H) || (~!lmax && labelOf(max) = @H)
+        | _ => true
+      )
+  ;

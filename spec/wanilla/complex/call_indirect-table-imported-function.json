@@ -1,0 +1,33 @@
+[
+  {
+    "function_id": 3,
+    "test_id": 0,
+    "result": [
+      "PT"
+    ],
+    "imported_function": [
+      {
+        "function_id": 0,
+        "context": "PT",
+        "table_out": "_",
+        "result": [
+          "PT"
+        ]
+      },
+      {
+        "function_id": 1,
+        "context": "PT",
+        "result": [
+          "ST"
+        ]
+      },
+      {
+        "function_id": 2,
+        "context": "PT"
+      }
+    ],
+    "queries": {
+      "result": "SAT"
+    }
+  }
+]
