@@ -1,0 +1,24 @@
+op overApproximateGlobals{!fid: int, !br: int}(gt: tuple<LValue; gs()>, ngt: tuple<LValue; gs()>): bool :=
+  for (!i: int) in interval(0, gs()),
+      (!bw: int) in bitwidthForGlobal(!i),
+      (!b: bool) in globalModifiedInLoopBlock(!fid,!br,!i):
+    && (!b) ? (isInRange{!bw}(valueOf(ngt[!i])) && labelOf(gt[!i]) = labelOf(ngt[!i])) : (ngt[!i] = gt[!i])
+  ;
+
+op overApproximateLocals{!fid: int, !br: int}(lt: tuple<LValue; ls{!fid}()>, nlt: tuple<LValue; ls{!fid}()>): bool :=
+  for (!i: int) in interval(0, ls{!fid}()),
+      (!bw: int) in bitwidthForLocal(!fid,!i),
+      (!b: bool) in localModifiedInLoopBlock(!fid,!br,!i):
+    && (!b) ? (isInRange{!bw}(valueOf(nlt[!i])) && labelOf(nlt[!i]) = labelOf(lt[!i])) : (nlt[!i] = lt[!i])
+  ;
+
+op overApproximateMemoryGrow{!fid: int, !br: int}(mem: Memory, nmem: Memory): bool :=
+  match (mem,nmem) with
+  | (@Mem(lbl,d,s,m), @Mem(nlbl, nd,ns,nm)) =>
+    lbl = nlbl && m = nm &&
+    for (!s: bool) in memoryStoreInLoopBlock(!fid,!br):
+      && (~!s || d = nd) &&
+    for (!g: bool) in memoryGrowInLoopBlock(!fid,!br):
+      && (!g) ? (absle(valueOf(s),valueOf(ns)) && absle(valueOf(ns),valueOf(m)) && labelOf(ns) = labelOf(s)) : (ns = s)
+  | _ => false
+  ;

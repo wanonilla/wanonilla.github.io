@@ -1,0 +1,84 @@
+[
+  {
+    "comment": "This test case runs analyses for leakage of secrets via the memory.",
+    "function_name": "process",
+    "test_id": 0,
+    "param": [],
+    "global_in": [ "PT" ],
+    "global_out": [ "PT" ],
+    "result": [],
+    "memory_in":  { "data" : "PU", "size": "PU", "exception": [{"start": 1024, "endInclusive": 1040, "label": "SU", "comment": "this is the region, the compiler put message.session" }] },
+    "memory_out": { "data" : "PU", "size": "PU" },
+    "queries": {
+      "memory_size": "UNSAT",
+      "imported_function": [
+        {
+          "function_name": "authorize_and_execute",
+          "memory_data": "UNSAT"
+        },
+        {
+          "function_name": "untrusted_log",
+          "memory_data": "UNSAT"
+        }
+      ]
+    },
+
+    "imported_function" : [
+      {
+        "function_name": "authorize_and_execute",
+        "context": "SU",
+        "global_out": [ "_" ],
+        "memory_in": { "data" : "SU", "size": "SU" },
+        "memory_out": { "data" : "_", "size": "_" }
+      },
+      {
+        "function_name": "untrusted_log",
+        "context": "PU",
+        "global_out": [ "_" ],
+        "memory_in": { "data" : "PU", "size": "PU" },
+        "memory_out": { "data" : "_", "size": "_" }
+      }
+    ]
+  },
+  {
+    "comment": "This test case runs checks if `untrusted_log` can be called in an untrusted context/with untrusted data (it can, because the message.payload is untrusted)",
+    "function_name": "process",
+    "test_id": 1,
+    "param": [],
+    "global_in": [ "PT" ],
+    "global_out": [ "PT" ],
+    "result": [],
+    "memory_in":  { "data" : "PU", "size": "PU", "exception": [ {"start": 1024, "endInclusive": 1040, "label": "SU", "comment": "this is the region, the compiler put message.session" }] },
+    "memory_out": { "data" : "PU", "size": "PU" },
+    "queries": {
+      "memory_size": "UNSAT",
+      "imported_function": [
+        {
+          "function_name": "authorize_and_execute",
+          "memory_data": "UNSAT"
+        },
+        {
+          "function_name": "untrusted_log",
+          "memory_data": "SAT"
+        }
+      ]
+    },
+
+    "imported_function" : [
+      {
+        "function_name": "authorize_and_execute",
+        "context": "SU",
+        "global_out": [ "_" ],
+        "memory_in": { "data" : "SU", "size": "SU" },
+        "memory_out": { "data" : "_", "size": "_" }
+      },
+      {
+        "function_name": "untrusted_log",
+        "context": "PT",
+        "global_out": [ "_" ],
+        "memory_in": { "data" : "PT", "size": "PT" },
+        "memory_out": { "data" : "_", "size": "_" }
+      }
+    ]
+  }
+]

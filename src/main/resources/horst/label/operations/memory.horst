@@ -1,0 +1,14 @@
+op dataOfMem(memory: Memory): Label := match memory with
+    | @Mem(data, _, _) => data
+    | _                => @HL // should never happen...
+    ;
+
+op sizeOfMem(memory: Memory): Label := match memory with
+    | @Mem(_, size, _) => size
+    | _                => @HL // should never happen...
+    ;
+
+op maxOfMem(mem: Memory): Label := match mem with
+  | @Mem(_, _, max) => max
+  | _               => @HL
+  ;

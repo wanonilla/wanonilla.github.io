@@ -1,0 +1,101 @@
+rule loadRule := for
+  (!fid: int)    in functionIds(),
+  (!op: int)     in loadOps(),
+  (!pc: int)     in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!offset: int) in memoryOffsetForFunctionIdAndPc(!fid, !pc)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>
+         ,?v: Value]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    boundOK{memOpBw{!op}(), !offset}(sizeOfMem(?mem), ?st[0]),
+    ?v = memLoad{!op, !offset}(dataOfMem(?mem), ?st[0])
+      => MState{!fid, !pc + 1}(?from, [?v,] ++ ?st[1:], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>
+         ,?v1: Value, ?v2: Value]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    boundOK{memOpBw{!op}(), !offset}(sizeOfMem(?mem1), ?st1[0]),
+    boundOK{memOpBw{!op}(), !offset}(sizeOfMem(?mem2), ?st2[0]),
+    ?v1 = memLoad{!op, !offset}(dataOfMem(?mem1), ?st1[0]),
+    ?v2 = memLoad{!op, !offset}(dataOfMem(?mem2), ?st2[0])
+      => MState2{!fid, !pc + 1}([?v1,] ++ ?st1[1:], ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                               ,[?v2,] ++ ?st2[1:], ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule storeRule := for
+  (!fid: int)    in functionIds(),
+  (!op: int)     in storeOps(),
+  (!pc: int)     in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!offset: int) in memoryOffsetForFunctionIdAndPc(!fid, !pc)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>
+         ,?res: array<Value>, ?nmem: Memory]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    boundOK{memOpBw{!op}(), !offset}(sizeOfMem(?mem), ?st[1]),
+    ?res = memStore{!op, !offset}(dataOfMem(?mem), ?st[1], ?st[0]),
+    ?nmem = @Mem(?res, sizeOfMem(?mem))
+      => MState{!fid, !pc + 1}(?from, ?st[2:], ?gt, ?lt, ?nmem, ?at0, ?gt0),
+
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>
+         ,?res1: array<Value>, ?res2: array<Value>, ?nmem1: Memory, ?nmem2: Memory]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    boundOK{memOpBw{!op}(), !offset}(sizeOfMem(?mem1), ?st1[1]),
+    boundOK{memOpBw{!op}(), !offset}(sizeOfMem(?mem2), ?st2[1]),
+    ?res1 = memStore{!op, !offset}(dataOfMem(?mem1), ?st1[1], ?st1[0]),
+    ?res2 = memStore{!op, !offset}(dataOfMem(?mem2), ?st2[1], ?st2[0]),
+    ?nmem1 = @Mem(?res1, sizeOfMem(?mem1)),
+    ?nmem2 = @Mem(?res2, sizeOfMem(?mem2))
+      => MState2{!fid, !pc + 1}(?st1[2:], ?gt1, ?lt1, ?nmem1, ?at01, ?gt01
+                               ,?st2[2:], ?gt2, ?lt2, ?nmem2, ?at02, ?gt02)
+  ;
+
+rule sizeRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, MEMORYSIZE)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?from, [sizeOfMem(?mem),] ++ ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+      => MState2{!fid, !pc + 1}([sizeOfMem(?mem1),] ++ ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                               ,[sizeOfMem(?mem2),] ++ ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule growRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, MEMORYGROW)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>
+         ,?size: Value, ?nmem: Memory]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?size = grow(?st[0], sizeOfMem(?mem), mkConst{mms()}()),
+    ?nmem = (
+      match ?mem with
+      | @Mem(data, _) => @Mem(data, ?size)
+      | _ => ?mem // Should not happen!!
+    )
+      => MState{!fid, !pc + 1}(?from, [sizeOfMem(?mem),] ++ ?st[1:], ?gt, ?lt, ?nmem, ?at0, ?gt0),
+
+  clause [?x1: Value, ?st1: tuple<Value; ss{!fid,!pc}()-1>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?x2: Value, ?st2: tuple<Value; ss{!fid,!pc}()-1>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>
+         ,?size1: Value, ?size2: Value, ?nmem1: Memory, ?nmem2: Memory]
+    MState2{!fid, !pc}(?x1 :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?x2 :: ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    ?size1 = grow(?x1, sizeOfMem(?mem1), mkConst{mms()}()),
+    ?size2 = grow(?x2, sizeOfMem(?mem2), mkConst{mms()}()),
+    ?nmem1 = (
+      match ?mem1 with
+      | @Mem(data, _) => @Mem(data, ?size1)
+      | _ => ?mem1 // Should not happen!!
+    ),
+    ?nmem2 = (
+      match ?mem2 with
+      | @Mem(data, _) => @Mem(data, ?size2)
+      | _ => ?mem2 // Should not happen!!
+    )
+      => MState2{!fid, !pc + 1}(sizeOfMem(?mem1) :: ?st1, ?gt1, ?lt1, ?nmem1, ?at01, ?gt01
+                               ,sizeOfMem(?mem2) :: ?st2, ?gt2, ?lt2, ?nmem2, ?at02, ?gt02)
+  ;

@@ -1,0 +1,61 @@
+Test specifications are given in json format and named <test>.json for an associate <test>.wasm.
+Json files are validated against the schema found in test/resources/wien/secpriv/wasm/schema.json.
+
+Each json file consists of an array of test specification object.
+Inputs and outputs are specified using labels PT (public trusted), ST (secret trusted), PU (public untrusted), and SU (secret untrusted) which form a lattice as follows:
+     SU
+    /  \
+  PU    ST
+    \  /
+     PT
+For imported functions, we use "_" to denote that globals/memory is not modified and value and label at call and return are the same.
+Queries are specified as "UNSAT" (unsatisfiable) or "SAT" (satisfiable), where "UNSAT" corresponds to noninterferent and "SAT" corresponds to interferent.
+
+Test specification objects may have the following properties:
+- ignore: a boolean flag to ignore the specification (default: false)
+- test_id: an integer id
+- function_id: the function id of the initially called function
+- sensitivity: tini (termination insensitive) or tsni (termination sensitive) (default: tini)
+- param: array of labels denoting the security level of parameters
+- global_in: array of labels denoting the security level of globals when top level function is called
+- memory_in: object specifying security of initial memory
+  + data: label denoting the security level memory data
+  + size: label denoting the security level memory size
+- result: array of labels denoting the security level of results
+- global_out: array of labels denoting the security level of globals when top level function returns
+- memory_out: object specifying security of memory at top level function return
+  + data: label denoting the security level memory data
+  + size: label denoting the security level memory size
+- imported_function: array of objects specifying security of imported functions.
+  Each object contains the following properties:
+  + function_id: function id of imported function
+  + context: label denoting whether function call may depend on secret
+  + param: array of labels denoting the security level of parameters
+  + global_in: array of labels denoting the security level of globals when function is called
+  + memory_in: object specifying security of memory at function call
+    * data: label denoting the security level memory data
+    * size: label denoting the security level memory size
+  + result: array of labels denoting the security level of returns
+  + global_out: array of labels (or "_") denoting the security level of globals when function returns
+  + memory_out: object specifying security of memory at function return
+    * data: label (or "_") denoting the security level memory data
+    * size: label (or "_") denoting the security level memory size
+- queries: object specifying which queries to perform
+  + result: "UNSAT" if no leak is expected to results, otherwise "SAT"
+  + global: "UNSAT" if no leak is expected to final globals, otherwise "SAT"
+  + memory_data: "UNSAT" if no leak is expected to final memory data, otherwise "SAT"
+  + memory_size: "UNSAT" if no leak is expected to final memory size, otherwise "SAT"
+  + imported_function: object specifying queries for imported function.
+    Each object contains the following properties:
+    * function_id: function id of imported function
+    * context: "UNSAT" if no leak is expected by whether function is called, otherwise "SAT"
+    * param: "UNSAT" if no leak is expected by the parameters of the function call, otherwise "SAT"
+    * global: "UNSAT" if no leak is expected by the globals at the function call, otherwise "SAT"
+    * memory_data: "UNSAT" if no leak is expected by the memory data at the function call, otherwise "SAT"
+    * memory_size: "UNSAT" if no leak is expected by the memory size at the function call, otherwise "SAT"
+  + trap_result: (tsni only) "UNSAT" if no leak is expected by whether the function traps or returns, otherwise "SAT"
+  + divergence_result: (tsni only) "UNSAT" if no leak is expected by whether the function diverges or returns, otherwise "SAT"
+  + trap_divergence: (tsni only) "UNSAT" if no leak is expected by whether the function traps or diverges, otherwise "SAT"
+  + global_trap: (tsni only) "UNSAT" if no leak is expected by globals at traps, otherwise "SAT"
+  + memory_data_trap: (tsni only) "UNSAT" if no leak is expected by memory data at traps, otherwise "SAT"
+  + memory_size_trap: (tsni only) "UNSAT" if no leak is expected by memory size at traps, otherwise "SAT"

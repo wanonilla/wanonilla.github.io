@@ -1,0 +1,74 @@
+rule globalGetRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, GLOBALGET),
+  (!idx: int) in immediateForFunctionIdAndPc(!fid, !pc)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?from, [?gt[!idx],] ++ ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+      => MState2{!fid, !pc + 1}([?gt1[!idx],] ++ ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                               ,[?gt2[!idx],] ++ ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule globalSetRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, GLOBALSET),
+  (!idx: int) in immediateForFunctionIdAndPc(!fid, !pc)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?from, ?st[1:], ?gt[:!idx] ++ [?st[0],] ++ ?gt[!idx+1:], ?lt, ?mem, ?at0, ?gt0),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+      => MState2{!fid, !pc + 1}(?st1[1:], ?gt1[:!idx] ++ [?st1[0],] ++ ?gt1[!idx+1:], ?lt1, ?mem1, ?at01, ?gt01
+                               ,?st2[1:], ?gt2[:!idx] ++ [?st2[0],] ++ ?gt2[!idx+1:], ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule localGetRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, LOCALGET),
+  (!idx: int) in immediateForFunctionIdAndPc(!fid, !pc)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?from, [?lt[!idx],] ++ ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+      => MState2{!fid, !pc + 1}([?lt1[!idx],] ++ ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                               ,[?lt2[!idx],] ++ ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule localSetRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, LOCALSET),
+  (!idx: int) in immediateForFunctionIdAndPc(!fid, !pc)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?from, ?st[1:], ?gt, ?lt[:!idx] ++ [?st[0],] ++ ?lt[!idx+1:], ?mem, ?at0, ?gt0),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+      => MState2{!fid, !pc + 1}(?st1[1:], ?gt1, ?lt1[:!idx] ++ [?st1[0],] ++ ?lt1[!idx+1:], ?mem1, ?at01, ?gt01
+                               ,?st2[1:], ?gt2, ?lt2[:!idx] ++ [?st2[0],] ++ ?lt2[!idx+1:], ?mem2, ?at02, ?gt02)
+  ;
+
+rule localTeeRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, LOCALTEE),
+  (!idx: int) in immediateForFunctionIdAndPc(!fid, !pc)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?from, ?st, ?gt, ?lt[:!idx] ++ [?st[0],] ++ ?lt[!idx+1:], ?mem, ?at0, ?gt0),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+      => MState2{!fid, !pc + 1}(?st1, ?gt1, ?lt1[:!idx] ++ [?st1[0],] ++ ?lt1[!idx+1:], ?mem1, ?at01, ?gt01
+                               ,?st2, ?gt2, ?lt2[:!idx] ++ [?st2[0],] ++ ?lt2[!idx+1:], ?mem2, ?at02, ?gt02)
+  ;

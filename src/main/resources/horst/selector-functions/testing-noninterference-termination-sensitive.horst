@@ -1,0 +1,15 @@
+sel trapResultSafe : unit -> [int];
+sel divergenceResultSafe : unit -> [int];
+sel trapDivergenceSafe : unit -> [int];
+sel globalTrapSafe : unit -> [int];
+sel memoryDataTrapSafe : unit -> [int];
+sel memorySizeTrapSafe : unit -> [int];
+sel tableTrapSafe : unit -> [int];
+
+sel trapResultLeak : unit -> [int];
+sel divergenceResultLeak : unit -> [int];
+sel trapDivergenceLeak : unit -> [int];
+sel globalTrapLeak : unit -> [int];
+sel memoryDataTrapLeak : unit -> [int];
+sel memorySizeTrapLeak : unit -> [int];
+sel tableTrapLeak : unit -> [int];

@@ -1,0 +1,64 @@
+rule importedFunctionRule := for
+  (!fid: int) in importedFunctionIds()
+
+  clause [?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>
+         ,?rt: tuple<Value; rs{!fid}()>, ?rgt: tuple<Value; gs()>, ?rdata: array<Value>, ?rsize: Value]
+    MState{!fid, 0}(0, [], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+    for (!i: int) in interval(0,rs{!fid}()),
+        (!bw: int) in bitwidthForResult(!fid,!i):
+       && isInRange{!bw}(?rt[!i]),
+
+    for (!i: int) in interval(0,gs()),
+        (!bw: int) in bitwidthForGlobal(!i),
+        (!pass: bool, !cg: bool, !ig: bool) in globalOutLabelForImportedFunctionAndPosition(!fid,!i):
+      && (!pass)
+          ? (?gt[!i] = ?rgt[!i])
+          : (isInRange{!bw}(?rgt[!i])),
+
+    for (!pass: bool, !cd: bool, !id: bool) in memoryDataOutLabelForImportedFunction(!fid):
+      && (~!pass || dataOfMem(?mem) = ?rdata),
+
+    for (!pass: bool, !cs: bool, !is: bool) in memorySizeOutLabelForImportedFunction(!fid):
+      && (!pass)
+          ? (sizeOfMem(?mem) = ?rsize)
+          : (ileu{64}(sizeOfMem(?mem),?rsize) && ileu{64}(?rsize,mkConst{mms() * pow{16}(2)}()))
+
+       => Return{!fid}(0, ?rt, ?rgt, @Mem(?rdata, ?rsize), ?at0, ?gt0),
+
+  clause [?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>
+         ,?rt1: tuple<Value; rs{!fid}()>, ?rgt1: tuple<Value; gs()>, ?rdata1: array<Value>, ?rsize1: Value
+         ,?rt2: tuple<Value; rs{!fid}()>, ?rgt2: tuple<Value; gs()>, ?rdata2: array<Value>, ?rsize2: Value]
+    MState2{!fid, 0}([], ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                    ,[], ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+
+    for (!i: int) in interval(0,rs{!fid}()),
+         (!cr: bool, !ir: bool) in resultLabelForImportedFunctionAndPosition(!fid,!i):
+       && (!cr || ~!ir || ~absneq(?rt1[!i],?rt2[!i])),
+
+    for (!i: int) in interval(0,gs()),
+        (!bw: int) in bitwidthForGlobal(!i),
+        (!pass: bool, !cg: bool, !ig: bool) in globalOutLabelForImportedFunctionAndPosition(!fid,!i):
+      && (!pass)
+          ? (?gt1[!i] = ?rgt1[!i] && ?gt2[!i] = ?rgt2[!i])
+          : (isInRange{!bw}(?rgt1[!i]) && isInRange{!bw}(?rgt2[!i]) && (!cg || ~ig || ~absneq(?rgt1[!i],?rgt2[!i]))),
+
+    for (!pass: bool, !cd: bool, !id: bool) in memoryDataOutLabelForImportedFunction(!fid):
+      && (!pass)
+          ? (dataOfMem(?mem2) = ?rdata1 && dataOfMem(?mem2) = ?rdata2)
+          : (!cd || ~!id || ?rdata1 = ?rdata2),
+
+    for (!pass: bool, !cs: bool, !is: bool) in memorySizeOutLabelForImportedFunction(!fid):
+      && (!pass)
+          ? (sizeOfMem(?mem1) = ?rsize1 && sizeOfMem(?mem2) = ?rsize2)
+          : (ileu{64}(sizeOfMem(?mem1),?rsize1) && ileu{64}(?rsize1,mkConst{mms() * pow{16}(2)}())
+            &&
+            ileu{64}(sizeOfMem(?mem2),?rsize2) && ileu{64}(?rsize2,mkConst{mms() * pow{16}(2)}())
+            &&
+            (!cs || ~!is || ~absneq(?rsize1,?rsize2))
+            )
+
+       => Return2{!fid}(?rt1, ?rgt1, @Mem(?rdata1, ?rsize1), ?at01, ?gt01
+                       ,?rt2, ?rgt2, @Mem(?rdata2, ?rsize2), ?at02, ?gt02)
+  ;

@@ -1,0 +1,432 @@
+rule functionScopeExtendRule := for
+  (!fid: int) in functionIds()
+
+  clause
+    true => ScopeExtend{!fid}(0, pcmax{!fid}())
+  ;
+
+rule splitRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionId(!fid)
+
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2ToSplit{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+      => MState{!fid, !pc}(!pc, ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2ToSplit{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+      => MState{!fid, !pc}(!pc, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule nopRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, NOP)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+      => MState2{!fid, !pc+1}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule blockRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in blocksForFunctionId(!fid)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+      => MState2{!fid, !pc+1}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule loopRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in loopsForFunctionId(!fid)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+      => MState2{!fid, !pc+1}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule endRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int, !next: int) in endsForFunctionId(!fid)
+
+  clause [?from: int, ?to: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ScopeExtend{!fid}(?from,?to),
+    !next < ?to
+      => MState{!fid, !next}(?from, ?st[ss{!fid,!pc}()-ss{!fid,!next}():], ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?from: int, ?to: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ScopeExtend{!fid}(?from,?to),
+    !next >= ?to
+      => MStateToJoin{!fid, !next}(?from, ?st[ss{!fid,!pc}()-ss{!fid,!next}():], ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+      => MState2{!fid, !next}(?st1[ss{!fid,!pc}()-ss{!fid,!next}():], ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                             ,?st2[ss{!fid,!pc}()-ss{!fid,!next}():], ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule joinRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in joinsForFunctionId(!fid)
+
+  clause [?from: int
+         ,?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MStateToJoin{!fid, !pc}(?from, ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01),
+    MStateToJoin{!fid, !pc}(?from, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+      => MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                           ,?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule brRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BR),
+  (!br: int)  in breakDestinations(!fid, !pc),
+  (!n: int)   in getAmountOfReturnValuesInBlock(!fid, !pc)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !br}(?from, ?st[:!n] ++ ?st[ss{!fid,!pc}() - ss{!fid,!br}() + !n:], ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    !pc <= !br
+      => ScopeExtend{!fid}(?from, !br),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+      => MState2{!fid, !br}(?st1[:!n] ++ ?st1[ss{!fid,!pc}() - ss{!fid,!br}() + !n:], ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                           ,?st2[:!n] ++ ?st2[ss{!fid,!pc}() - ss{!fid,!br}() + !n:], ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule brIfRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BRIF),
+  (!br: int)  in breakDestinations(!fid, !pc),
+  (!n: int)   in getAmountOfReturnValuesInBlock(!fid, !pc)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?nst: tuple<Value; ss{!fid,!br}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    absneq(?st[0], mkValue(0)),
+    ?nst = ?st[1 : (!n + 1)] ++ ?st[ss{!fid,!pc}() - ss{!fid,!br}() + !n:]
+      => MState{!fid, !br}(?from, ?nst, ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    absneq(?st[0], mkValue(0)),
+    !pc <= !br
+      => ScopeExtend{!fid}(?from, !br),
+
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    absneq(?st1[0], mkValue(0)),
+    absneq(?st2[0], mkValue(0))
+      => MState2{!fid, !br}(?st1[1 : (!n + 1)] ++ ?st1[ss{!fid,!pc}() - ss{!fid,!br}() + !n:], ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                           ,?st2[1 : (!n + 1)] ++ ?st2[ss{!fid,!pc}() - ss{!fid,!br}() + !n:], ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+
+  clause [?from: int, ?to: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(?st[0], mkValue(0)),
+    ScopeExtend{!fid}(?from,?to),
+    !pc+1 < ?to
+      => MState{!fid, !pc + 1}(?from, ?st[1:], ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(!pc, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(?st[0], mkValue(0))
+      => MStateToJoin{!fid, !pc + 1}(?from, ?st[1:], ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(?st[0], mkValue(0))
+      => ScopeExtend{!fid}(?from, !pc),
+
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    abseq(?st1[0], mkValue(0)),
+    abseq(?st2[0], mkValue(0))
+      => MState2{!fid, !pc+1}(?st1[1:], ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                             ,?st2[1:], ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    (abseq(?st1[0], mkValue(0)) && absneq(?st2[0], mkValue(0))) || (absneq(?st1[0], mkValue(0)) && abseq(?st2[0], mkValue(0)))
+      => MState2ToSplit{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                                  ,?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule brTableRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BRTABLE),
+  (!sz: int)  in sizeOfBreakTable(!fid, !pc),
+  (!idx: int) in interval(0, !sz - 1), // the last label is reached via the default rule
+  (!br: int)  in breakTableDestinations(!fid, !pc, !idx),
+  (!n: int)   in getAmountOfReturnValuesInBlock(!fid, !pc)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?nst: tuple<Value; ss{!fid,!br}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?nst = ?st[1 : (!n + 1)] ++ ?st[ss{!fid,!pc}() - ss{!fid,!br}() + !n:],
+    abseq(?st[0], mkValue(!idx))
+      => MState{!fid, !br}(?from, ?nst, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(?st[0], mkValue(!idx)),
+    !pc <= !br
+      => ScopeExtend{!fid}(?from, !br),
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(?st[0], mkValue(!idx)),
+    !pc > !br
+      => ScopeExtend{!fid}(?from, !pc),
+
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    abseq(?st1[0], mkValue(!idx)),
+    abseq(?st2[0], mkValue(!idx))
+      => MState2{!fid, !br}(?st1[1 : (!n + 1)] ++ ?st1[ss{!fid,!pc}() - ss{!fid,!br}() + !n:], ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                           ,?st2[1 : (!n + 1)] ++ ?st2[ss{!fid,!pc}() - ss{!fid,!br}() + !n:], ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+
+  // Split if disagree
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    (abseq(?st1[0], mkValue(!idx)) && absneq(?st2[0], mkValue(!idx))) || (absneq(?st1[0], mkValue(!idx)) && abseq(?st2[0], mkValue(!idx)))
+      => MState2ToSplit{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                                  ,?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule brTableDefaultRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BRTABLE),
+  (!sz: int)  in sizeOfBreakTable(!fid, !pc),
+  (!br: int)  in breakTableDestinations(!fid, !pc, !sz - 1),
+  (!n: int)   in getAmountOfReturnValuesInBlock(!fid, !pc)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?nst: tuple<Value; ss{!fid,!br}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?nst = ?st[1 : (!n + 1)] ++ ?st[ss{!fid,!pc}() - ss{!fid,!br}() + !n:],
+    absge(?st[0], mkValue(!sz-1))
+      => MState{!fid, !br}(?from, ?nst, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    absge(?st[0], mkValue(!sz-1)),
+    !pc <= !br
+      => ScopeExtend{!fid}(?from, !br),
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    absge(?st[0], mkValue(!sz-1)),
+    !pc > !br
+      => ScopeExtend{!fid}(?from, !br),
+
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    absge(?st1[0], mkValue(!sz-1)),
+    absge(?st2[0], mkValue(!sz-1))
+      => MState2{!fid, !br}(?st1[1 : (!n + 1)] ++ ?st1[ss{!fid,!pc}() - ss{!fid,!br}() + !n:], ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                           ,?st2[1 : (!n + 1)] ++ ?st2[ss{!fid,!pc}() - ss{!fid,!br}() + !n:], ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+
+  // Split if disagree
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    (absge(?st1[0], mkValue(!sz-1)) && abslt(?st2[0], mkValue(!sz-1))) || (abslt(?st1[0], mkValue(!sz-1)) && absge(?st2[0], mkValue(!sz-1)))
+      => MState2ToSplit{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                                  ,?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule ifThenElseRule := for
+  (!fid: int) in functionIds(),
+  //talk about this with Aleksandr
+  //(!pc: int)  in pcsForFunctionIdAndOpcode(!fid, IF),
+  (!pc: int)  in ifs(!fid),
+  (!else: int) in elseForIf(!fid, !pc),
+  (!end: int) in endForIf(!fid, !pc)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    absneq(?st[0], mkValue(0))
+      => MState{!fid, !pc + 1}(?from, ?st[1:], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(?st[0], mkValue(0))
+      => MState{!fid, !else}(?from, ?st[1:], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => ScopeExtend{!fid}(?from, !end),
+
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    absneq(?st1[0], mkValue(0)),
+    absneq(?st2[0], mkValue(0))
+      => MState2{!fid, !pc+1}(?st1[1:], ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                             ,?st2[1:], ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    abseq(?st1[0], mkValue(0)),
+    abseq(?st2[0], mkValue(0))
+      => MState2{!fid, !else}(?st1[1:], ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                             ,?st2[1:], ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+
+  // Split if disagree
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    (absneq(?st1[0], mkValue(0)) && abseq(?st2[0], mkValue(0))) || (abseq(?st1[0], mkValue(0)) && absneq(?st2[0], mkValue(0)))
+      => MState2ToSplit{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule callRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, CALLFUNCTION),
+  (!cid: int) in immediateForFunctionIdAndPc(!fid, !pc)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>
+         ,?at: tuple<Value; as{!cid}()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?at = reverse{as{!cid}()}(?st[:as{!cid}()])
+      => MState{!cid, 0}(0, [], ?gt, ?at ++ [mkValue(0); ls{!cid}() - as{!cid}()], ?mem, ?at, ?gt),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>
+         ,?at1: tuple<Value; as{!cid}()>, ?at2: tuple<Value; as{!cid}()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    ?at1 = reverse{as{!cid}()}(?st1[:as{!cid}()]),
+    ?at2 = reverse{as{!cid}()}(?st2[:as{!cid}()])
+      => MState2{!cid, 0}([], ?gt1, ?at1 ++ [mkValue(0); ls{!cid}() - as{!cid}()], ?mem1, ?at1, ?gt1
+                         ,[], ?gt2, ?at2 ++ [mkValue(0); ls{!cid}() - as{!cid}()], ?mem2, ?at2, ?gt2),
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>
+         ,?at: tuple<Value; as{!cid}()>, ?rbr: int, ?rt: tuple<Value; rs{!cid}()>, ?rgt: tuple<Value; gs()>, ?rmem: Memory]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?at = reverse{as{!cid}()}(?st[:as{!cid}()]),
+    Return{!cid}(0, ?rt, ?rgt, ?rmem, ?at, ?gt)
+      => MState{!fid, !pc + 1}(?from, ?rt ++ ?st[as{!cid}():], ?rgt, ?lt, ?rmem, ?at0, ?gt0),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>
+         ,?at1: tuple<Value; as{!cid}()>, ?rt1: tuple<Value; rs{!cid}()>, ?rgt1: tuple<Value; gs()>, ?rmem1: Memory
+         ,?at2: tuple<Value; as{!cid}()>, ?rt2: tuple<Value; rs{!cid}()>, ?rgt2: tuple<Value; gs()>, ?rmem2: Memory]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    ?at1 = reverse{as{!cid}()}(?st1[:as{!cid}()]),
+    ?at2 = reverse{as{!cid}()}(?st2[:as{!cid}()]),
+    Return2{!cid}(?rt1, ?rgt1, ?rmem1, ?at1, ?gt1, ?rt2, ?rgt2, ?rmem2, ?at2, ?gt2)
+      => MState2{!fid, !pc + 1}(?rt1 ++ ?st1[as{!cid}():], ?rgt1, ?lt1, ?rmem1, ?at01, ?gt01
+                               ,?rt2 ++ ?st2[as{!cid}():], ?rgt2, ?lt2, ?rmem2, ?at02, ?gt02)
+  ;
+
+rule indirectCallRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, CALLINDIRECT),
+  (!idx: int, !cid: int) in possibleCallTargets(!fid, !pc)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>
+         ,?at: tuple<Value; as{!cid}()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?at = reverse{as{!cid}()}(?st[1:as{!cid}()+1]),
+    abseq(?st[0], mkValue(!idx))
+      => MState{!cid, 0}(0, [], ?gt, ?at ++ [mkConst{0}(); ls{!cid}() - as{!cid}()], ?mem, ?at, ?gt),
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>
+         ,?at: tuple<Value; as{!cid}()>, ?rt: tuple<Value; rs{!cid}()>, ?rgt: tuple<Value; gs()>, ?rmem: Memory]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?at = reverse{as{!cid}()}(?st[1:as{!cid}()+1]),
+    abseq(?st[0], mkValue(!idx)),
+    Return{!cid}(0, ?rt, ?rgt, ?rmem, ?at, ?gt)
+      => MState{!fid, !pc + 1}(?from, ?rt ++ ?st[as{!cid}() + 1:], ?rgt, ?lt, ?rmem, ?at0, ?gt0),
+
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>
+         ,?at1: tuple<Value; as{!cid}()>, ?at2: tuple<Value; as{!cid}()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    ?at1 = reverse{as{!cid}()}(?st1[1:as{!cid}()+1]),
+    ?at2 = reverse{as{!cid}()}(?st2[1:as{!cid}()+1]),
+    abseq(?st1[0], mkValue(!idx)),
+    abseq(?st2[0], mkValue(!idx))
+      => MState2{!cid, 0}([], ?gt1, ?at1 ++ [mkValue(0); ls{!cid}() - as{!cid}()], ?mem1, ?at1, ?gt1
+                         ,[], ?gt2, ?at2 ++ [mkValue(0); ls{!cid}() - as{!cid}()], ?mem2, ?at2, ?gt2),
+
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>
+         ,?at1: tuple<Value; as{!cid}()>, ?rt1: tuple<Value; rs{!cid}()>, ?rgt1: tuple<Value; gs()>, ?rmem1: Memory
+         ,?at2: tuple<Value; as{!cid}()>, ?rt2: tuple<Value; rs{!cid}()>, ?rgt2: tuple<Value; gs()>, ?rmem2: Memory]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    ?at1 = reverse{as{!cid}()}(?st1[1:as{!cid}()+1]),
+    ?at2 = reverse{as{!cid}()}(?st2[1:as{!cid}()+1]),
+    abseq(?st1[0], mkValue(!idx)),
+    abseq(?st2[0], mkValue(!idx)),
+    Return2{!cid}(?rt1, ?rgt1, ?rmem1, ?at1, ?gt1, ?rt2, ?rgt2, ?rmem2, ?at2, ?gt2)
+      => MState2{!fid, !pc + 1}(?rt1 ++ ?st1[as{!cid}()+1:], ?rgt1, ?lt1, ?rmem1, ?at01, ?gt01
+                               ,?rt2 ++ ?st2[as{!cid}()+1:], ?rgt2, ?lt2, ?rmem2, ?at02, ?gt02),
+
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    (abseq(?st1[0], mkValue(!idx)) && absneq(?st2[0], mkValue(!idx))) || (absneq(?st1[0], mkValue(!idx)) && abseq(?st2[0], mkValue(!idx)))
+      => MState2ToSplit{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>
+         ,?at1: tuple<Value; as{!cid}()>, ?rt1: tuple<Value; rs{!cid}()>, ?rgt1: tuple<Value; gs()>, ?rmem1: Memory]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    ?at1 = reverse{as{!cid}()}(?st1[1:as{!cid}()+1]),
+    abseq(?st1[0], mkValue(!idx)),
+    absneq(?st2[0], mkValue(!idx)),
+    Return{!cid}(0, ?rt1, ?rgt1, ?rmem1, ?at1, ?gt1)
+      => MStateToJoin{!fid, !pc + 1}(!pc, ?rt1 ++ ?st1[as{!cid}()+1:], ?rgt1, ?lt1, ?rmem1, ?at01, ?gt01),
+
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>
+         ,?at2: tuple<Value; as{!cid}()>, ?rt2: tuple<Value; rs{!cid}()>, ?rgt2: tuple<Value; gs()>, ?rmem2: Memory]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    ?at2 = reverse{as{!cid}()}(?st2[1:as{!cid}()+1]),
+    absneq(?st1[0], mkValue(!idx)),
+    abseq(?st2[0], mkValue(!idx)),
+    Return{!cid}(0, ?rt2, ?rgt2, ?rmem2, ?at2, ?gt2)
+      => MStateToJoin{!fid, !pc + 1}(!pc, ?rt2 ++ ?st2[as{!cid}()+1:], ?rgt2, ?lt2, ?rmem2, ?at02, ?gt02)
+  ;
+
+rule functionExitRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in exitPointsForFunctionId(!fid)
+
+  clause [?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(0, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => Return{!fid}(0, ?st[:rs{!fid}()], ?gt, ?mem, ?at0, ?gt0),
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?from != 0
+      => ReturnToJoin{!fid}(?from, ?st[:rs{!fid}()], ?gt, ?mem, ?at0, ?gt0),
+  clause [?from: int
+         ,?rt1: tuple<Value; rs{!fid}()>, ?rgt1: tuple<Value; gs()>, ?rmem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?rt2: tuple<Value; rs{!fid}()>, ?rgt2: tuple<Value; gs()>, ?rmem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    ReturnToJoin{!fid}(?from, ?rt1, ?rgt1, ?rmem1, ?at01, ?gt01),
+    ReturnToJoin{!fid}(?from, ?rt2, ?rgt2, ?rmem2, ?at02, ?gt02)
+      => Return2{!fid}(?rt1, ?rgt1, ?rmem1, ?at01, ?gt01, ?rt2, ?rgt2, ?rmem2, ?at02, ?gt02),
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}()),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+      => Return2{!fid}(?st1[:rs{!fid}()], ?gt1, ?mem1, ?at01, ?gt01, ?st2[:rs{!fid}()], ?gt2, ?mem2, ?at02, ?gt02)
+  ;

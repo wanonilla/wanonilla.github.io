@@ -1,0 +1,11 @@
+pred TrapCall{!fid: int}: Label * int * tuple<LValue;gs()> * Memory * tuple<LValue; as{!fid}()> * tuple<LValue; gs()>;
+
+rule propagateTrapRule := for
+  (!fid: int) in startFunctionId()
+
+  clause [?l: Label, ?pc: int, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    Trap{!fid}(?l, ?pc, ?gt, ?mem, ?at0, ?gt0),
+    Init{!fid}(?at0, ?gt0),
+    ?l = @L || ?pc != 0
+      => TrapCall{!fid}(?l, ?pc, ?gt, ?mem, ?at0, ?gt0)
+  ;

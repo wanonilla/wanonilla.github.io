@@ -1,0 +1,11 @@
+pred Sync{!fid: int}: tuple<LValue; as{!fid}()> * tuple<LValue; gs()> * tuple<LValue; as{!fid}()> * tuple<LValue; gs()>;
+
+rule syncRule := for
+  (!fid: int) in functionIds()
+
+  clause [?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>]
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs()}(?gt01,?gt02)
+
+      => Sync{!fid}(?at01, ?gt01, ?at02, ?gt02)
+  ;

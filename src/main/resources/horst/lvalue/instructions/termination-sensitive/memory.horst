@@ -1,0 +1,88 @@
+rule loadTsniRule := for
+  (!fid: int)    in functionIds(),
+  (!op: int)     in loadOps(),
+  (!pc: int)     in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!offset: int) in memoryOffsetForFunctionIdAndPc(!fid, !pc)
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?l: Label]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ~memLoadOpOk{!op, !offset}(?x, ?mem),
+    ?l = (
+      match ?mem with
+      | @Mem(_, size, _) => lub{2}([labelOf(?x), labelOf(size)])
+      | _ => @H // Should not happen!
+    )
+      => TrapToJoin{!fid}(?l, !pc, ?gt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ~memLoadOpOk{!op, !offset}(?x, ?mem),
+    ?from != 0
+      => TrapToJoin{!fid}(@H, ?from, ?gt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ~memLoadOpOk{!op, !offset}(?x, ?mem),
+    ?from = 0
+      => TrapToJoin{!fid}(@H, ?from, ?gt, ?mem, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?resvalue: Value, ?reslabel: Label]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    memLoadOpOk{!op, !offset}(?x, ?mem),
+    isInRange{memLoadOpBw{!op}()}(?resvalue),
+    lub{3}([labelOf(?x), data(?mem), labelOf(size(?mem))]) = @H
+      => MState{!fid, !pc + 1}(@HCtx(!pc), @LVal(?resvalue,@H) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ~memLoadOpOk{!op, !offset}(?x, ?mem)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule storeTsniRule := for
+  (!fid: int)    in functionIds(),
+  (!op: int)     in storeOps(),
+  (!pc: int)     in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!offset: int) in memoryOffsetForFunctionIdAndPc(!fid, !pc)
+
+  clause [?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?l: Label]
+    MState{!fid, !pc}(?ctx, ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ~memStoreOpOk{!op, !offset}(?y, ?mem),
+    ?l = (
+      match ?mem with
+      | @Mem(_, size, _) => lub{2}([labelOf(?x), labelOf(size)])
+      | _ => @H // Should not happen!
+    )
+      => TrapToJoin{!fid}(?l, !pc, ?gt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ~memStoreOpOk{!op, !offset}(?y, ?mem),
+    ?from != 0
+      => TrapToJoin{!fid}(@H, ?from, ?gt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ~memStoreOpOk{!op, !offset}(?y, ?mem),
+    ?from = 0
+      => Trap{!fid}(@H, ?from, ?gt, ?mem, ?at0, ?gt0),
+
+  clause [?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?res: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    memStoreOpOk{!op, !offset}(?y, ?mem),
+    ?res = (
+      match ?mem with
+      | @Mem(ldata, size, max) => @Mem(lub{4}([labelOf(?x), labelOf(?y), ldata, labelOf(size)]), size, max)
+      | _ => @Mem(@H,@LVal(freeValOrTop(),@H),@LVal(freeValOrTop(),@H)) // Should not happen!
+    ),
+    lub{2}([labelOf(?y), labelOf(size(?mem))]) = @H
+      => MState{!fid, !pc + 1}(@HCtx(!pc), ?st, ?gt, ?lt, ?res, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ~memStoreOpOk{!op, !offset}(?y, ?mem)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;

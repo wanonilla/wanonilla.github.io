@@ -1,0 +1,61 @@
+pred Init{
+    !fid: int
+}:  Label *
+    tuple<LValue; as{!fid}()> *
+    tuple<LValue; gs()> *
+    Memory
+    ;
+
+pred ScopeExtend{!fid: int}: int * int;
+
+pred MState{
+    !fid: int,                      // currently executing function
+    !pc: int                        // currently executing op code position
+}:  Context *                       // current execution context
+    tuple<LValue; ss{!fid,!pc}()> * // the actual stack
+    tuple<LValue; gs()> *           // store for the global variables
+    tuple<LValue; ls{!fid}()> *     // store for the local variables
+    Memory *                        // the memory of the module
+    Table *                         // the function table
+    tuple<LValue; as{!fid}()> *     // the original arguments for the function
+    tuple<LValue; gs()> *           // the original global variables
+    Memory                          // the original memory
+    ;
+
+pred MStateToJoin{
+    !fid: int,                      // currently executing function
+    !pc: int                        // currently executing op code position
+}:  Context *                       // current execution context
+    tuple<LValue; ss{!fid,!pc}()> * // the actual stack
+    tuple<LValue; gs()> *           // store for the global variables
+    tuple<LValue; ls{!fid}()> *     // store for the local variables
+    Memory *                        // the memory of the module
+    Table *                         // the function table
+    tuple<LValue; as{!fid}()> *     // the original arguments for the function
+    tuple<LValue; gs()> *           // the original global variables
+    Memory                          // the original memory
+    ;
+
+pred Return{
+    !fid: int                       // function that returns
+}:  Context *                       // execution context
+    tuple<LValue; rs{!fid}()> *     // store for the returned values
+    tuple<LValue; gs()> *           // store for the global variables
+    Memory *                        // (possibly modified) memory of the module
+    Table *                         // the function table
+    tuple<LValue; as{!fid}()> *     // the original arguments for the function
+    tuple<LValue; gs()> *           // the original global variables
+    Memory                          // the original memory
+    ;
+
+pred ReturnToJoin{
+    !fid: int                       // function that returns
+}:  Context *                       // current execution context
+    tuple<LValue; rs{!fid}()> *     // store for the returned values
+    tuple<LValue; gs()> *           // store for the global variables
+    Memory *                        // (possibly modified) memory of the module
+    Table *                         // the function table
+    tuple<LValue; as{!fid}()> *     // the original arguments for the function
+    tuple<LValue; gs()> *           // the original global variables
+    Memory                          // the original memory
+    ;

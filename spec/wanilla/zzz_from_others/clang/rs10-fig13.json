@@ -1,0 +1,33 @@
+[
+  {
+    "function_id": 2,
+    "test_id": 0,
+    "param": ["ST"],
+    "global_in": ["PT", "PT", "PT", "PT", "PT", "PT", "PT"],
+    "memory_in": {
+      "data": "PT",
+      "size": "PT"
+    },
+    "imported_function": [
+      {
+        "function_id": 0,
+        "context": "PT",
+        "param": ["PT"],
+        "global_out": ["_", "_", "_", "_", "_", "_", "_"],
+        "memory_out": {
+          "data": "_",
+          "size": "_"
+        }
+      }
+    ],
+    "queries": {
+      "imported_function": [
+        {
+          "function_id": 0,
+          "param": "UNSAT",
+          "context": "UNSAT"
+        }
+      ]
+    }
+  }
+]

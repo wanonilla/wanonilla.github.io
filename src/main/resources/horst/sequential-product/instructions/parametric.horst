@@ -1,0 +1,24 @@
+rule dropRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, DROP),
+  (!r: int) in interval(0,2)
+
+  clause [?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; fs{!fid,!r}()>, ?gt0: tuple<Value; gs()>, ?mem0: Memory]
+    MState{!fid, !pc, !r}(?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0)
+      => MState{!fid, !pc + 1, !r}(?st[1:], ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0)
+  ;
+
+rule selectRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, SELECT),
+  (!r: int) in interval(0,2)
+
+  clause [?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; fs{!fid,!r}()>, ?gt0: tuple<Value; gs()>, ?mem0: Memory]
+    MState{!fid, !pc, !r}(?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+    abseq(?st[0], mkConst{0}())
+      => MState{!fid, !pc + 1, !r}([?st[1],] ++ ?st[3:], ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+  clause [?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; fs{!fid,!r}()>, ?gt0: tuple<Value; gs()>, ?mem0: Memory]
+    MState{!fid, !pc, !r}(?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+    absneq(?st[0], mkConst{0}())
+      => MState{!fid, !pc + 1, !r}([?st[2],] ++ ?st[3:], ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0)
+  ;

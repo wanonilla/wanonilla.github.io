@@ -1,0 +1,179 @@
+test testNoninterferenceTrapResultUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in trapResultSafe()
+
+  [?ctx: Context
+  ,?gt1: tuple<LValue; gs()>, ?mem1: Memory, ?tbl1: Table, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?mem01: Memory
+  ,?rt2: tuple<LValue;rs{!fid}()>, ?gt2: tuple<LValue; gs()>, ?mem2: Memory, ?tbl2: Table, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>, ?mem02: Memory]
+
+    TrapCall{!fid}(?ctx, ?gt1, ?mem1, ?tbl1, ?at01, ?gt01, ?mem01),
+    ReturnCall{!fid}(?ctx, ?rt2, ?gt2, ?mem2, ?tbl2, ?at02, ?gt02, ?mem02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs()}(?gt01,?gt02),
+    lowEqMem(?mem01,?mem02),
+    labelOfCtx(?ctx) = @Illegal
+  ;
+
+test testNoninterferenceTrapResultSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in trapResultLeak()
+
+  [?ctx: Context
+  ,?gt1: tuple<LValue; gs()>, ?mem1: Memory, ?tbl1: Table, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?mem01: Memory
+  ,?rt2: tuple<LValue;rs{!fid}()>, ?gt2: tuple<LValue; gs()>, ?mem2: Memory, ?tbl2: Table, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>, ?mem02: Memory]
+
+    TrapCall{!fid}(?ctx, ?gt1, ?mem1, ?tbl1, ?at01, ?gt01, ?mem01),
+    ReturnCall{!fid}(?ctx, ?rt2, ?gt2, ?mem2, ?tbl2, ?at02, ?gt02, ?mem02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs()}(?gt01,?gt02),
+    lowEqMem(?mem01,?mem02),
+    labelOfCtx(?ctx) = @Illegal
+  ;
+
+test testNoninterferenceDivergenceUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in divergenceResultSafe()
+
+  [?ctx: Context
+  ,?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?mem01: Memory
+  ,?rt2: tuple<LValue; rs{!fid}()>, ?gt2: tuple<LValue; gs()>, ?mem2: Memory, ?tbl2: Table, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>, ?mem02: Memory]
+
+    DivergeCall{!fid}(?ctx, ?at01, ?gt01, ?mem01),
+    ReturnCall{!fid}(?ctx, ?rt2, ?gt2, ?mem2, ?tbl2, ?at02, ?gt02, ?mem01),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs()}(?gt01,?gt02),
+    lowEqMem(?mem01,?mem02),
+    labelOfCtx(?ctx) = @Illegal
+  ;
+
+test testNoninterferenceDivergenceSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in divergenceResultLeak()
+
+  [?ctx: Context
+  ,?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?mem01: Memory
+  ,?rt2: tuple<LValue; rs{!fid}()>, ?gt2: tuple<LValue; gs()>, ?mem2: Memory, ?tbl2: Table, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>, ?mem02: Memory]
+
+    DivergeCall{!fid}(?ctx, ?at01, ?gt01, ?mem01),
+    ReturnCall{!fid}(?ctx, ?rt2, ?gt2, ?mem2, ?tbl2, ?at02, ?gt02, ?mem02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs()}(?gt01,?gt02),
+    lowEqMem(?mem01,?mem02),
+    labelOfCtx(?ctx) = @Illegal
+  ;
+
+test testNoninterferenceTrapDivergenceUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in trapDivergenceSafe()
+
+  [?ctx: Context
+  ,?gt1: tuple<LValue; gs()>, ?mem1: Memory, ?tbl1: Table, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?mem01: Memory
+  ,?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>, ?mem02: Memory]
+
+    TrapCall{!fid}(?ctx, ?gt1, ?mem1, ?tbl1, ?at01, ?gt01, ?mem01),
+    DivergeCall{!fid}(?ctx, ?at02, ?gt02, ?mem02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs()}(?gt01,?gt02),
+    lowEqMem(?mem01,?mem02),
+    labelOfCtx(?ctx) = @Illegal
+  ;
+
+test testNoninterferenceTrapDivergenceSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in trapDivergenceLeak()
+
+  [?ctx: Context
+  ,?gt1: tuple<LValue; gs()>, ?mem1: Memory, ?tbl1: Table, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?mem01: Memory
+  ,?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>, ?mem02: Memory]
+
+    TrapCall{!fid}(?ctx, ?gt1, ?mem1, ?tbl1, ?at01, ?gt01, ?mem01),
+    DivergeCall{!fid}(?ctx, ?at02, ?gt02, ?mem02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs()}(?gt01,?gt02),
+    lowEqMem(?mem01,?mem02),
+    labelOfCtx(?ctx) = @Illegal
+  ;
+
+test testNoninterferenceGlobalTrapUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in globalTrapSafe()
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    TrapCall{!fid}(?ctx, ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalOutLabelForPosition(!idx):
+      || flowsTo(mkLabel(!cg, !ig), perspectiveOfCtx(?ctx)) && labelOf(?gt[!idx]) = @Illegal
+  ;
+
+test testNoninterferenceGlobalTrapSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in globalTrapLeak()
+
+  [?ctx: Context, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    TrapCall{!fid}(?ctx, ?gt, ?mem, ?tbl, ?at0, ?gt0, ?mem0),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalOutLabelForPosition(!idx):
+      || flowsTo(mkLabel(!cg, !ig), perspectiveOfCtx(?ctx)) && labelOf(?gt[!idx]) = @Illegal
+  ;
+
+test testNoninterferenceMemoryDataTrapUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in memoryDataTrapSafe()
+
+  [?l: Label, ?pc: int, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    TrapCall{!fid}(?ctx, ?gt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+    for (!cd: bool, !id: bool) in memoryDataOutLabel():
+      || flowsTo(mkLabel(!cd, !id), perspectiveOfCtx(?ctx)) && labelOf(valueOfMem(?mem)) = @Illegal
+  ;
+
+test testNoninterferenceMemoryDataTrapSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in memoryDataTrapLeak()
+
+  [?ctx: Context, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    TrapCall{!fid}(?ctx, ?gt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+    for (!cd: bool, !id: bool) in memoryDataOutLabel():
+      || flowsTo(mkLabel(!cd, !id), perspectiveOfCtx(?ctx)) && labelOf(valueOfMem(?mem)) = @Illegal
+  ;
+
+test testNoninterferenceMemorySizeTrapUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in memorySizeTrapSafe()
+
+  [?ctx: Context, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    TrapCall{!fid}(?ctx, ?gt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+    for (!cs: bool, !is: bool) in memorySizeOutLabel():
+      || flowsTo(mkLabel(!cs, !is), perspectiveOfCtx(?ctx)) && labelOf(sizeOfMem(?mem)) = @Illegal
+  ;
+
+test testNoninterferenceMemorySizeTrapSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in memorySizeTrapLeak()
+
+  [?ctx: Context, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    TrapCall{!fid}(?ctx, ?gt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+    for (!cs: bool, !is: bool) in memorySizeOutLabel():
+      || flowsTo(mkLabel(!cs, !is), perspectiveOfCtx(?ctx)) && labelOf(sizeOfMem(?mem)) = @Illegal
+  ;
+
+test testNoninterferenceTableTrapUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in tableTrapSafe()
+
+  [?ctx: Context, ?mem: Memory, ?ptbl: TablePrecision, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    TrapCall{!fid}(?ctx, ?gt, ?mem, @Tbl(?ptbl, @Illegal), ?at0, ?gt0, ?mem0),
+    for (!ct: bool, !it: bool) in tableOutLabel():
+      || flowsTo(mkLabel(!ct, !it), perspectiveOfCtx(?ctx))
+  ;
+
+test testNoninterferenceTableTrapSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in tableTrapLeak()
+
+  [?ctx: Context, ?mem: Memory, ?ptbl: TablePrecision, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    TrapCall{!fid}(?ctx, ?gt, ?mem, @Tbl(?ptbl, @Illegal), ?at0, ?gt0, ?mem0),
+    for (!ct: bool, !it: bool) in memorySizeOutLabel():
+      || flowsTo(mkLabel(!ct, !it), perspectiveOfCtx(?ctx))
+  ;

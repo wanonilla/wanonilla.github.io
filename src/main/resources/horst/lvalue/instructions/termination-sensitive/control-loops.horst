@@ -1,0 +1,190 @@
+rule brInfiniteLoopRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BR),
+  (!br: int)  in breakDestinations(!fid, !pc),
+  (!dmy: bool) in onlyIf(!pc > !br)
+
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => Loop{!fid}(@H, ?from, ?at0, ?gt0),
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule brIfInfiniteLoopRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BRIF),
+  (!br: int)  in breakDestinations(!fid, !pc),
+  (!dmy: bool) in onlyIf(!pc > !br)
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    absneq(valueOf(?x), mkConst{0}()),
+    labelOf(?x) = @H
+      => Loop{!fid}(@H, !pc, ?at0, ?gt0),
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    absneq(valueOf(?x), mkConst{0}())
+      => Loop{!fid}(@H, ?from, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    absneq(valueOf(?x), mkConst{0}()),
+    labelOf(?x) = @H
+      => ScopeExtend{!fid}(!pc, pcmax{!fid}()),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    absneq(valueOf(?x), mkConst{0}())
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule brTableInfiniteLoopRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BRTABLE),
+  (!sz: int)  in sizeOfBreakTable(!fid, !pc),
+  (!idx: int) in interval(0, !sz - 1),
+  (!br: int)  in breakTableDestinations(!fid, !pc, !idx),
+  (!dmy: bool) in onlyIf(!pc > !br)
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    labelOf(?x) = @H
+      => Loop{!fid}(@H, !pc, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(valueOf(?x), mkConst{!idx}())
+      => Loop{!fid}(@H, ?from, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    labelOf(?x) = @H
+      => ScopeExtend{!fid}(!pc, pcmax{!fid}()),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(valueOf(?x), mkConst{!idx}())
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule brTableDefaultInfiniteLoopRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, BRTABLE),
+  (!sz: int)  in sizeOfBreakTable(!fid, !pc),
+  (!br: int)  in breakTableDestinations(!fid, !pc, !sz-1),
+  (!dmy: bool) in onlyIf(!pc > !br)
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    absge(valueOf(?x), mkConst{!sz-1}()),
+    labelOf(?x) = @H
+      => Loop{!fid}(@H, !pc, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    absge(valueOf(?x), mkConst{!sz-1}())
+     => Loop{!fid}(@H, ?from, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    absge(valueOf(?x), mkConst{!sz-1}()),
+    labelOf(?x) = @H
+      => ScopeExtend{!fid}(!pc, pcmax{!fid}()),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    absge(valueOf(?x), mkConst{!sz-1}())
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule callInfiniteLoopRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, CALLFUNCTION),
+  (!cid: int) in immediateForFunctionIdAndPc(!fid, !pc)
+
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => Loop{!fid}(@H, ?from, ?at0, ?gt0),
+
+  clause [?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rbr: int]
+    MState{!fid, !pc}(@LCtx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Loop{!cid}(@H, ?rbr, ?at, ?ngt),
+    ?rbr != 0
+      => Loop{!fid}(@H, !pc, ?at0, ?gt0),
+
+  clause [?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rbr: int, ?rt: tuple<LValue; rs{!cid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory]
+    MState{!fid, !pc}(@LCtx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Return{!cid}(@H, ?rbr, ?rt, ?rgt, ?rmem, ?at, ?ngt),
+    ?rbr != 0
+      => MState{!fid, !pc + 1}(@HCtx(!pc), ?rt ++ ?st[as{!cid}():], ?rgt, ?lt, ?rmem, ?at0, ?gt0),
+
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rbr: int]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Loop{!cid}(@H, ?rbr, ?at, ?ngt),
+    ?rbr = 0
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule indirectCallInfiniteLoopRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, CALLINDIRECT),
+  (!idx: int, !cid: int) in possibleCallTargets(!fid, !pc)
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H
+      => Loop{!fid}(@H, !pc, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => Loop{!fid}(@H, ?from, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rbr: int]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Loop{!cid}(@H, ?rbr, ?at, ?ngt),
+    ?rbr != 0
+      => Loop{!fid}(@H, !pc, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rbr: int, ?rt: tuple<LValue; rs{!cid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Return{!cid}(@H, ?rbr, ?rt, ?rgt, ?rmem, ?at, ?ngt),
+    ?rbr != 0
+      => MState{!fid, !pc + 1}(@HCtx(!pc), ?rt ++ ?st[as{!cid}():], ?rgt, ?lt, ?rmem, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rbr: int]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Loop{!cid}(@H, ?rbr, ?at, ?ngt),
+    ?rbr = 0
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;

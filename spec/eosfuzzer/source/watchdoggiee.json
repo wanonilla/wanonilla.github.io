@@ -1,0 +1,810 @@
+[
+  {
+    "function_id": "59",
+    "test_id": 0,
+    "param": [
+      "PT",
+      "PT",
+      "PT"
+    ],
+    "result": [],
+    "global_in": [
+      "PT",
+      "PT",
+      "PT"
+    ],
+    "global_out": [
+      "PT",
+      "PT",
+      "PT"
+    ],
+    "imported_function": [
+      {
+        "function_id": "0",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "1",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "2",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "3",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "4",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "5",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "6",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "7",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "8",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "9",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "10",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "11",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "12",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "13",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "14",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "15",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "16",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "17",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "18",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "19",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "20",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "21",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "22",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "23",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "24",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "25",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "26",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "27",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "28",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "29",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "30",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "31",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "32",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "33",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU",
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "34",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      },
+      {
+        "function_id": "35",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "36",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [],
+        "result": [
+          "PT"
+        ],
+        "context": "SU"
+      },
+      {
+        "function_id": "37",
+        "global_in": [
+          "SU",
+          "SU",
+          "SU"
+        ],
+        "global_out": [
+          "_",
+          "_",
+          "_"
+        ],
+        "param": [
+          "SU"
+        ],
+        "result": [],
+        "context": "SU"
+      }
+    ],
+    "queries": {
+      "result": "UNSAT",
+      "imported_function": []
+    }
+  }
+]

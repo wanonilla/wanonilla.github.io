@@ -1,0 +1,8 @@
+// Mostly for debugging
+test testReturn expect SAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId()
+
+  [?ctx: Label, ?pc: int, ?res: tuple<LValue; rs{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    Return{!fid}(?ctx, ?pc, ?res, ?gt, ?mem, ?at0, ?gt0)
+  ;

@@ -1,0 +1,31 @@
+rule invokeAllTestedFunctions := for
+  (!fid: int) in startFunctionId(),
+  (!min: int, !max: int) in getMemoryMinMax(),
+  (!ldata: bool) in memoryDataInSecret(),
+  (!lsize: bool) in memorySizeInSecret(),
+  (!lmax: bool) in memorySizeMaxSecret()
+
+  clause [?gt: tuple<LValue; gs()>, ?at: tuple<LValue; as{!fid}()>]
+    for (!idx: int) in interval(0,gs()),
+        (!v: int, !top: bool) in valueAndTopOfGlobal(!idx),
+        (!bw: int)  in bitwidthForGlobal(!idx),
+        (!sec: bool) in globalInSecretForPosition(!idx):
+      && (valueOf(?gt[!idx]) = val{!top, !v}() && isInRange{!bw}(valueOf(?gt[!idx])) && labelOf(?gt[!idx]) = mkLabel(!sec)),
+
+    for (!idx: int) in interval(0,as{!fid}()),
+        (!bw: int)  in bitwidthForArgument(!fid,!idx),
+        (!sec: bool) in argumentSecretForPosition(!idx):
+      && (isInRange{!bw}(valueOf(?at[!idx])) && labelOf(?at[!idx]) = mkLabel(!sec))
+
+      => Init{!fid}(?at, ?gt),
+
+  clause [?gt: tuple<LValue; gs()>, ?at: tuple<LValue; as{!fid}()>, ?mem: Memory]
+    ?mem = @Mem(
+      mkLabel(!ldata)
+    , for (!pos: int, !val: int) in datasegmentsWithPositions(): x: array<Value> -> store x !pos mkConst{!val}(), [mkConst{0}()]
+    , @LVal(mkConst{!min}(),mkLabel(!lsize))
+    , @LVal(mkConst{!max}(),mkLabel(!lmax))
+    ),
+    Init{!fid}(?at, ?gt)
+      => MState{!fid, 0}(@LCtx, [], ?gt, ?at ++ [mkLConst{0}(); ls{!fid}() - as{!fid}()], ?mem, ?at, ?gt)
+  ;

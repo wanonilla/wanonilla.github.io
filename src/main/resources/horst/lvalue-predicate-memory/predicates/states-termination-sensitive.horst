@@ -1,0 +1,3 @@
+pred Trap{!fid: int}: Context * tuple<LValue; gs()> * Memory * Table * tuple<LValue; as{!fid}()> * tuple<LValue; gs()> * Memory;
+pred TrapToJoin{!fid: int}: Context * tuple<LValue; gs()> * Memory  * Table * tuple<LValue; as{!fid}()> * tuple<LValue; gs()> * Memory;
+pred Diverge{!fid: int}: Context * tuple<LValue; as{!fid}()> * tuple<LValue; gs()> * Memory;

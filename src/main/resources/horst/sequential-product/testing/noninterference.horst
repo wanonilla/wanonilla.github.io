@@ -1,0 +1,111 @@
+test testNoninterferenceResultUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in resultSafe()
+
+  [?res1: tuple<Value; rs{!fid}()>, ?gt1: tuple<Value; gs()>, ?mem1: Memory
+  ,?res2: tuple<Value; rs{!fid}()>, ?gt2: tuple<Value; gs()>, ?mem2: Memory]
+
+    ReturnCall{!fid}(?res1, ?gt1, ?mem1, ?res2, ?gt2, ?mem2),
+
+    for (!idx: int) in interval(0,rs{!fid}()),
+        (!cr: bool, !ir: bool) in resultLabelForPosition(!idx):
+      || (~!cr && !ir && absneq(?res1[!idx],?res2[!idx]))
+  ;
+
+test testNoninterferenceResultSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in resultLeak()
+
+  [?res1: tuple<Value; rs{!fid}()>, ?gt1: tuple<Value; gs()>, ?mem1: Memory
+  ,?res2: tuple<Value; rs{!fid}()>, ?gt2: tuple<Value; gs()>, ?mem2: Memory]
+
+    ReturnCall{!fid}(?res1, ?gt1, ?mem1, ?res2, ?gt2, ?mem2),
+
+    for (!idx: int) in interval(0,rs{!fid}()),
+        (!cr: bool, !ir: bool) in resultLabelForPosition(!idx):
+      || (~!cr && !ir && absneq(?res1[!idx],?res2[!idx]))
+  ;
+
+test testNoninterferenceGlobalUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in globalSafe()
+
+  [?res1: tuple<Value; rs{!fid}()>, ?gt1: tuple<Value; gs()>, ?mem1: Memory
+  ,?res2: tuple<Value; rs{!fid}()>, ?gt2: tuple<Value; gs()>, ?mem2: Memory]
+
+    ReturnCall{!fid}(?res1, ?gt1, ?mem1, ?res2, ?gt2, ?mem2),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalOutLabelForPosition(!idx):
+      || (~!cg && !ig && absneq(?gt1[!idx],?gt2[!idx]))
+  ;
+
+test testNoninterferenceGlobalSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in globalLeak()
+
+  [?res1: tuple<Value; rs{!fid}()>, ?gt1: tuple<Value; gs()>, ?mem1: Memory
+  ,?res2: tuple<Value; rs{!fid}()>, ?gt2: tuple<Value; gs()>, ?mem2: Memory]
+
+    ReturnCall{!fid}(?res1, ?gt1, ?mem1, ?res2, ?gt2, ?mem2),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalOutLabelForPosition(!idx):
+      || (~!cg && !ig && absneq(?gt1[!idx],?gt2[!idx]))
+  ;
+
+test testNoninterferenceMemoryDataUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in memoryDataSafe()
+
+  [?res1: tuple<Value; rs{!fid}()>, ?gt1: tuple<Value; gs()>, ?mem1: Memory
+  ,?res2: tuple<Value; rs{!fid}()>, ?gt2: tuple<Value; gs()>, ?mem2: Memory
+  ,?idx: int]
+
+    ReturnCall{!fid}(?res1, ?gt1, ?mem1, ?res2, ?gt2, ?mem2),
+
+    for (!cd: bool, !id: bool) in memoryDataOutLabel():
+      || (~!cd && !id && absneq(select dataOfMem(?mem1) ?idx,select dataOfMem(?mem1) ?idx))
+  ;
+
+test testNoninterferenceMemoryDataSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in memoryDataLeak()
+
+  [?res1: tuple<Value; rs{!fid}()>, ?gt1: tuple<Value; gs()>, ?mem1: Memory
+  ,?res2: tuple<Value; rs{!fid}()>, ?gt2: tuple<Value; gs()>, ?mem2: Memory
+  ,?idx: int]
+
+    ReturnCall{!fid}(?res1, ?gt1, ?mem1, ?res2, ?gt2, ?mem2),
+
+    for (!cd: bool, !id: bool) in memoryDataOutLabel():
+      || (~!cd && !id && absneq(select dataOfMem(?mem1) ?idx,select dataOfMem(?mem1) ?idx))
+  ;
+
+test testNoninterferenceMemorySizeUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in memorySizeSafe()
+
+  [?res1: tuple<Value; rs{!fid}()>, ?gt1: tuple<Value; gs()>, ?mem1: Memory
+  ,?res2: tuple<Value; rs{!fid}()>, ?gt2: tuple<Value; gs()>, ?mem2: Memory
+  ,?idx: int]
+
+    ReturnCall{!fid}(?res1, ?gt1, ?mem1, ?res2, ?gt2, ?mem2),
+
+    for (!cs: bool, !is: bool) in memorySizeOutLabel():
+      || (~!cs && !is && absneq(sizeOfMem(?mem1),sizeOfMem(?mem2)))
+  ;
+
+test testNoninterferenceMemorySizeSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in memorySizeLeak()
+
+  [?res1: tuple<Value; rs{!fid}()>, ?gt1: tuple<Value; gs()>, ?mem1: Memory
+  ,?res2: tuple<Value; rs{!fid}()>, ?gt2: tuple<Value; gs()>, ?mem2: Memory
+  ,?idx: int]
+
+    ReturnCall{!fid}(?res1, ?gt1, ?mem1, ?res2, ?gt2, ?mem2),
+
+    for (!cs: bool, !is: bool) in memorySizeOutLabel():
+      || (~!cs && !is && absneq(sizeOfMem(?mem1),sizeOfMem(?mem2)))
+  ;

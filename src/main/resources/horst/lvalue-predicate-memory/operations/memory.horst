@@ -1,0 +1,25 @@
+op indexOfMem(memory: Memory): Value := match memory with
+  | @Mem(i, _, _) => i
+  | _             => freeValOrTop() // should never happen...
+  ;
+
+op valueOfMem(memory: Memory): LValue := match memory with
+  | @Mem(_, v, _) => v
+  | _             => @LVal(freeValOrTop(),@Illegal) // should never happen...
+  ;
+
+op sizeOfMem(memory: Memory): LValue := match memory with
+  | @Mem(_, _, n) => n
+  | _             => @LVal(freeValOrTop(),@Illegal) // should never happen...
+  ;
+
+op lowEqMem(x: Memory, y: Memory): bool :=  match (x,y) with
+  | (@Mem(i1,v1,s1),@Mem(i2,v2,s2)) => i1 = i2 && lowEq{2}([v1,s1],[v2,s2])
+  | _  => false
+  ;
+
+op joinMem(x: Memory, y: Memory, z: Memory): bool :=  match (x,y,z) with
+  | (@Mem(i1,v1,s1),@Mem(i2,v2,s2),@Mem(i3,v3,s3)) =>
+    i1 = i2 && i1 = i3 && join(v1,v2,v3) && join(s1,s2,s3)
+  | _ => false
+  ;

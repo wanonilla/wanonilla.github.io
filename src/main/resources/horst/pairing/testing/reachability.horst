@@ -1,0 +1,18 @@
+test testGeneralMStateReachability expect SAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!pc: int) in pcsForFunctionId(!fid)
+
+  [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+test testGeneralMState2Reachability expect SAT for
+  (!cid: int) in testId(),
+  (!fid: int) in startFunctionId(),
+  (!pc: int) in pcsForFunctionId(!fid)
+
+  [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+  ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;

@@ -1,0 +1,20 @@
+rule dropRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, DROP)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, ?st[1:], ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule selectRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, SELECT)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, [raiseTo(?st[1], lub{2}([labelOf(?st[0]), labelOfCtx(?ctx)])),] ++ ?st[3:], ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, [raiseTo(?st[2], lub{2}([labelOf(?st[0]), labelOfCtx(?ctx)])),] ++ ?st[3:], ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;

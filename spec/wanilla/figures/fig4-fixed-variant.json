@@ -1,0 +1,75 @@
+[
+  {
+    "function_id": 2,
+    "test_id": 0,
+    "param": ["PU", "PU", "PU"],
+    "global_in": ["PU"],
+    "result": ["PU"],
+    "memory_in":  { "data" : "PT", "size": "PT" },
+    "memory_out": { "data" : "PT", "size": "PT" },
+    "queries": {
+      "memory_size": "UNSAT",
+      "memory_area": [
+        { "start": 0,    "endInclusive": 1055, "result": "UNSAT" },
+        { "start": 1056, "endInclusive": 1120, "result": "SAT" },
+        { "start": 1121,                       "result": "UNSAT" }
+      ]
+    },
+
+    "imported_function" : [
+      {
+        "function_id": 0,
+        "global_out": [ "_" ],
+        "memory_out": { "data" : "_", "size": "_" }
+      }
+    ]
+  },
+
+  {
+    "function_id": 2,
+    "test_id": 1,
+    "param": ["PU", "PU", "PT"],
+    "global_in": ["PU"],
+    "result": ["PU"],
+    "memory_in":  { "data" : "PT", "size": "PT" },
+    "memory_out": { "data" : "PT", "size": "PT" },
+    "queries": {
+      "memory_size": "UNSAT",
+      "memory_area": [
+        { "start": 0,    "endInclusive": 1055, "result": "UNSAT" },
+        { "start": 1056, "endInclusive": 1120, "result": "SAT" },
+        { "start": 1121,                       "result": "UNSAT" }
+      ]
+    },
+
+    "imported_function" : [
+      {
+        "function_id": 0,
+        "global_out": [ "_" ],
+        "memory_out": { "data" : "_", "size": "_" }
+      }
+    ]
+  },
+
+  {
+    "function_id": 2,
+    "test_id": 2,
+    "param": ["PT", "PT", "PT"],
+    "global_in": ["PU"],
+    "result": ["PU"],
+    "memory_in":  { "data" : "PT", "size": "PT" },
+    "memory_out": { "data" : "PT", "size": "PT" },
+    "queries": {
+      "memory_data": "UNSAT",
+      "memory_size": "UNSAT"
+    },
+
+    "imported_function" : [
+      {
+        "function_id": 0,
+        "global_out": [ "_" ],
+        "memory_out": { "data" : "_", "size": "_" }
+      }
+    ]
+  }
+]

@@ -1,0 +1,178 @@
+rule unreachableTsniRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, UNREACHABLE)
+
+  clause [?st: tuple<LValue; ss{!fid,!pc}()>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => TrapToJoin{!fid}(@L, !pc, ?gt, ?mem, ?at0, ?gt0),
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => TrapToJoin{!fid}(@H, ?from, ?gt, ?mem, ?at0, ?gt0),
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+      MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule callTsniRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, CALLFUNCTION),
+  (!cid: int) in immediateForFunctionIdAndPc(!fid, !pc)
+
+  clause [?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rl: Label, ?rbr: int, ?rgt: tuple<LValue; gs()>, ?rmem: Memory]
+    MState{!fid, !pc}(@LCtx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Trap{!cid}(?rl, ?rbr, ?rgt, ?rmem, ?at, ?ngt),
+    ?rbr != 0
+      => TrapToJoin{!fid}(?rl, !pc, ?rgt, ?rmem, ?at0, ?gt0),
+
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rbr: int, ?rgt: tuple<LValue; gs()>, ?rmem: Memory]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Trap{!cid}(@H, 0, ?rgt, ?rmem, ?at, ?ngt),
+    ?from != 0
+      => TrapToJoin{!fid}(@H, ?from, ?rgt, ?rmem, ?at0, ?gt0),
+
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rbr: int, ?rgt: tuple<LValue; gs()>, ?rmem: Memory]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Trap{!cid}(@H, 0, ?rgt, ?rmem, ?at, ?ngt),
+    ?from = 0
+      => Trap{!fid}(@H, ?from, ?rgt, ?rmem, ?at0, ?gt0),
+
+  clause [?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rbr: int, ?rt: tuple<LValue; rs{!cid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory]
+    MState{!fid, !pc}(@LCtx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Return{!cid}(@H, ?rbr, ?rt, ?rgt, ?rmem, ?at, ?ngt),
+    ?rbr != 0
+      => MState{!fid, !pc + 1}(@HCtx(!pc), ?rt ++ ?st[as{!cid}():], ?rgt, ?lt, ?rmem, ?at0, ?gt0),
+
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?rbr: int, ?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Trap{!cid}(@H, 0, ?rgt, ?rmem, ?at, ?ngt)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule indirectCallTsniRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, CALLINDIRECT),
+  (!idx: int, !cid: int) in possibleCallTargets(!fid, !pc)
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rl: Label, ?rbr: int, ?rgt: tuple<LValue; gs()>, ?rmem: Memory]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Trap{!cid}(?rl, ?rbr, ?rgt, ?rmem, ?at, ?ngt),
+    ?rbr != 0
+      => TrapToJoin{!fid}(?rl, !pc, ?rgt, ?rmem, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rgt: tuple<LValue; gs()>, ?rmem: Memory]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Trap{!cid}(@H, 0, ?rgt, ?rmem, ?at, ?ngt),
+    ?from != 0
+      => TrapToJoin{!fid}(@H, ?from, ?rgt, ?rmem, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rgt: tuple<LValue; gs()>, ?rmem: Memory]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Trap{!cid}(@H, 0, ?rgt, ?rmem, ?at, ?ngt),
+    ?from = 0
+      => Trap{!fid}(@H, ?from, ?rgt, ?rmem, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>
+         ,?rbr: int, ?rt: tuple<LValue; rs{!cid}()>, ?rgt: tuple<LValue; gs()>, ?rmem: Memory]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Return{!cid}(@H, ?rbr, ?rt, ?rgt, ?rmem, ?at, ?ngt),
+    ?rbr != 0
+      => MState{!fid, !pc + 1}(@HCtx(!pc), ?rt ++ ?st[as{!cid}():], ?rgt, ?lt, ?rmem, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?rgt: tuple<LValue; gs()>, ?rmem: Memory, ?at: tuple<LValue; as{!cid}()>, ?ngt: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(valueOf(?x), mkConst{!idx}()),
+    labelsOf{as{!cid}()}(?at) = labelsOf{as{!cid}()}(reverse{as{!cid}()}(?st[:as{!cid}()])),
+    labelsOf{gs()}(?ngt) = labelsOf{gs()}(?gt),
+    Trap{!cid}(@H, 0, ?rgt, ?rmem, ?at, ?ngt)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule indirectCallTsniRuleTrap := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, CALLINDIRECT)
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    for (!idx:int, !cid: int) in possibleCallTargets(!fid, !pc): && absneq(valueOf(?x), mkConst{!idx}())
+      => TrapToJoin{!fid}(labelOf(?x), !pc, ?gt, ?mem, ?at0, ?gt0),
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    for (!idx:int, !cid: int) in possibleCallTargets(!fid, !pc): && absneq(valueOf(?x), mkConst{!idx}()),
+    ?from != 0
+      => TrapToJoin{!fid}(@H, ?from, ?gt, ?mem, ?at0, ?gt0),
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    for (!idx:int, !cid: int) in possibleCallTargets(!fid, !pc): && absneq(valueOf(?x), mkConst{!idx}()),
+    ?from = 0
+      => Trap{!fid}(@H, ?from, ?gt, ?mem, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    for (!idx:int, !cid: int) in possibleCallTargets(!fid, !pc): && absneq(valueOf(?x), mkConst{!idx}()),
+    labelOf(?x) = @H
+      => MState{!fid, !pc}(@HCtx(!pc), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    for (!idx:int, !cid: int) in possibleCallTargets(!fid, !pc): && absneq(valueOf(?x), mkConst{!idx}())
+      => ScopeExtend{!fid}(?br, pcmax{!fid}())
+  ;
+
+rule trapJoinTsniRule := for
+  (!fid: int) in functionIds()
+
+  clause [?l: Label, ?pc: int
+         ,?gt1: tuple<LValue; gs()>, ?mem1: Memory, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>
+         ,?gt2: tuple<LValue; gs()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>
+         ,?gt3: tuple<LValue; gs()>, ?mem3: Memory]
+
+    TrapToJoin{!fid}(?l, ?pc, ?gt1, ?mem1, ?at01, ?gt01),
+    TrapToJoin{!fid}(?l, ?pc, ?gt2, ?mem2, ?at02, ?gt02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02),
+
+    // Set new labels
+    joinTuples{gs()}(?gt1, ?gt2, ?gt3),
+    ?mem3 = joinMemory(?mem1, ?mem2)
+
+      => Trap{!fid}(?l, ?pc, ?gt3, ?mem3, ?at01, ?gt01)
+  ;

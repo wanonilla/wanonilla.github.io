@@ -1,0 +1,89 @@
+rule dropRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, DROP)
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0)
+      => MState{!fid, !pc + 1}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0)
+  ;
+
+rule selectRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, SELECT)
+
+  clause [?ctx: Context, ?x: LValue, ?y: LValue, ?z: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-3>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(?ctx, ?x :: ?y :: ?z :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+    abseq(valueOf(?x), mkConst{0}()),
+    flowsTo(labelOf(?x), labelOfCtx(?ctx))
+      => MState{!fid, !pc + 1}(?ctx, raiseTo(?y, labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+
+  clause [?ctx: Context, ?x: LValue, ?y: LValue, ?z: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-3>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc}(?ctx, ?x :: ?y :: ?z :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+    absneq(valueOf(?x), mkConst{0}()),
+    flowsTo(labelOf(?x), labelOfCtx(?ctx))
+      => MState{!fid, !pc + 1}(?ctx, raiseTo(?z, labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+
+  clause [?x1: LValue, ?y1: LValue, ?z1: LValue, ?st1: tuple<LValue; ss{!fid,!pc}()-3>, ?gt1: tuple<LValue; gs()>, ?lt1: tuple<LValue; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?mem01: Memory
+         ,?x2: LValue, ?y2: LValue, ?z2: LValue, ?st2: tuple<LValue; ss{!fid,!pc}()-3>, ?gt2: tuple<LValue; gs()>, ?lt2: tuple<LValue; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>, ?mem02: Memory]
+
+    MState{!fid, !pc}(@LCtx, ?x1 :: ?y1 :: ?z1 :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01),
+    MState{!fid, !pc}(@LCtx, ?x2 :: ?y2 :: ?z2 :: ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02, ?mem02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02),
+    lowEqMem(?mem01,?mem02),
+
+    labelOf(?x1) = @H,
+
+    abseq(valueOf(?x1), mkConst{0}()),
+    abseq(valueOf(?x2), mkConst{0}())
+
+      => MState{!fid, !pc + 1}(@LCtx, joinHigh(valueOf(?y1), valueOf(?y2)) :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01),
+
+  clause [?x1: LValue, ?y1: LValue, ?z1: LValue, ?st1: tuple<LValue; ss{!fid,!pc}()-3>, ?gt1: tuple<LValue; gs()>, ?lt1: tuple<LValue; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?mem01: Memory
+         ,?x2: LValue, ?y2: LValue, ?z2: LValue, ?st2: tuple<LValue; ss{!fid,!pc}()-3>, ?gt2: tuple<LValue; gs()>, ?lt2: tuple<LValue; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>, ?mem02: Memory]
+
+    MState{!fid, !pc}(@LCtx, ?x1 :: ?y1 :: ?z1 :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01),
+    MState{!fid, !pc}(@LCtx, ?x2 :: ?y2 :: ?z2 :: ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02, ?mem02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02),
+    lowEqMem(?mem01,?mem02),
+
+    labelOf(?x1) = @H,
+
+    abseq(valueOf(?x1), mkConst{0}()),
+    absneq(valueOf(?x2), mkConst{0}())
+
+      => MState{!fid, !pc + 1}(@LCtx, joinHigh(valueOf(?y1), valueOf(?z2)) :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01),
+
+  clause [?x1: LValue, ?y1: LValue, ?z1: LValue, ?st1: tuple<LValue; ss{!fid,!pc}()-3>, ?gt1: tuple<LValue; gs()>, ?lt1: tuple<LValue; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?mem01: Memory
+         ,?x2: LValue, ?y2: LValue, ?z2: LValue, ?st2: tuple<LValue; ss{!fid,!pc}()-3>, ?gt2: tuple<LValue; gs()>, ?lt2: tuple<LValue; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>, ?mem02: Memory]
+
+    MState{!fid, !pc}(@LCtx, ?x1 :: ?y1 :: ?z1 :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01),
+    MState{!fid, !pc}(@LCtx, ?x2 :: ?y2 :: ?z2 :: ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02, ?mem02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02),
+    lowEqMem(?mem01,?mem02),
+
+    labelOf(?x1) = @H,
+
+    absneq(valueOf(?x1), mkConst{0}()),
+    abseq(valueOf(?x2), mkConst{0}())
+
+      => MState{!fid, !pc + 1}(@LCtx, joinHigh(valueOf(?z1), valueOf(?y2)) :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01),
+
+  clause [?x1: LValue, ?y1: LValue, ?z1: LValue, ?st1: tuple<LValue; ss{!fid,!pc}()-3>, ?gt1: tuple<LValue; gs()>, ?lt1: tuple<LValue; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?mem01: Memory
+         ,?x2: LValue, ?y2: LValue, ?z2: LValue, ?st2: tuple<LValue; ss{!fid,!pc}()-3>, ?gt2: tuple<LValue; gs()>, ?lt2: tuple<LValue; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>, ?mem02: Memory]
+
+    MState{!fid, !pc}(@LCtx, ?x1 :: ?y1 :: ?z1 :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01),
+    MState{!fid, !pc}(@LCtx, ?x2 :: ?y2 :: ?z2 :: ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02, ?mem02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02),
+    lowEqMem(?mem01,?mem02),
+
+    labelOf(?x1) = @H,
+
+    absneq(valueOf(?x1), mkConst{0}()),
+    absneq(valueOf(?x2), mkConst{0}())
+
+      => MState{!fid, !pc + 1}(@LCtx, joinHigh(valueOf(?z1), valueOf(?z2)) :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01)
+  ;

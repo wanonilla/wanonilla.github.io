@@ -1,0 +1,57 @@
+rule invokeRuleInit := for
+  (!fid: int) in startFunctionId(),
+  (!hasMem: bool) in isMemoryPresent(),
+  (!importMem: bool) in isMemoryImported(),
+  (!min: int) in getMemoryMin(),
+  (!max: int) in getMemoryMax(),
+  (!cd: bool, !id: bool) in memoryDataInLabel(),
+  (!cs: bool, !is: bool) in memorySizeInLabel(),
+  (!att: int) in relevantAttackers()
+
+  clause [?p: Label, ?gt: tuple<LValue; gs()>, ?at: tuple<LValue; as{!fid}()>, ?i: Value, ?v: LValue, ?size: LValue, ?arr: array<Value>]
+    for (!idx: int) in interval(0,gs()),
+        (!v: int, !top: bool) in valueAndTopOfGlobal(!idx),
+        (!bw: int)  in bitwidthForGlobal(!idx),
+        (!cg: bool, !ig: bool) in globalInLabelForPosition(!idx):
+      && valueOf(?gt[!idx]) = val{!top, !v}()
+      && isInRange{!bw}(valueOf(?gt[!idx]))
+      && labelOf(?gt[!idx]) = mkFlowLabel(mkLabel(!cg,!ig), attackerToLabel{!att}()),
+
+    for (!idx: int) in interval(0,as{!fid}()),
+        (!bw: int)  in bitwidthForArgument(!fid,!idx),
+        (!ca: bool, !ia: bool) in argumentLabelForPosition(!idx):
+      && isInRange{!bw}(valueOf(?at[!idx]))
+      && labelOf(?at[!idx]) = mkFlowLabel(mkLabel(!ca, !ia), attackerToLabel{!att}()),
+
+    isVal(?i),
+    iltu{64}(?i, mkConst{!max * pow{16}(2)}()),
+    (!importMem)
+    ? (isInRange{8}(valueOf(?v)))
+    : (valueOf(?v) = for (!pos: int, !val: int) in datasegmentsWithPositions(): acc: Value -> (mkConst{!pos}() = ?i) ? (mkConst{!val}()) : (acc), mkConst{0}()),
+
+    labelOf(?v) = for (!start: int, !endInclusive: int, !ced: bool, !ied: bool) in memoryDataInLabelExceptions():
+                    x: FlowLabel -> (absle(mkConst{!start}(), ?i) &&  abslt(?i, mkConst{!endInclusive}())) ? (mkFlowLabel(mkLabel(!ced, !ied), attackerToLabel{!att}())) : (x),
+                    mkFlowLabel(mkLabel(!cd,!id), attackerToLabel{!att}()),
+
+    //labelOf(?v) = mkFlowLabel(mkLabel(!cd,!id), ?p),
+    //labelOf(?v) = (absle(mkConst{1024}(), ?i) &&  abslt(mkConst{1024 + 8*2}(), ?i)) ? (mkFlowLabel(mkTop(), ?p)) : (mkFlowLabel(mkLabel(!cd,!id), ?p)),
+//    labelOf(?v) = (absle(mkConst{1024}(), ?i) &&  abslt(?i, mkConst{1025}())) ? (mkFlowLabel(mkTop(), ?p)) : (mkFlowLabel(mkLabel(!cd,!id), ?p)),
+
+
+    //ileu{64}(mkConst{!min}(), valueOf(?size)),
+    //ileu{64}(valueOf(?size), mkConst{!max}()),
+    valueOf(?size) = mkConst{!min}(),
+    labelOf(?size) = mkFlowLabel(mkLabel(!cs,!is), attackerToLabel{!att}())
+      => Init{!fid, !att}(?at, ?gt, @Mem(?i,?v,?size));
+
+rule invokeRule := for
+  (!fid: int) in startFunctionId(),
+  (!impreciseTbl: bool) in isTableImprecise(),
+  (!ct: bool, !it: bool) in tableInLabel(),
+  (!att: int) in relevantAttackers()
+
+  clause [?gt: tuple<LValue; gs()>, ?at: tuple<LValue; as{!fid}()>, ?mem: Memory, ?tbl: Table]
+    Init{!fid, !att}(?at, ?gt, ?mem),
+    ?tbl = @Tbl((!impreciseTbl) ? (@TblImprecise) : (@TblPrecise), mkFlowLabel(mkLabel(!ct,!it), attackerToLabel{!att}()))
+      => MState{!fid, 0, !att}(mkCtx(@Legal), [], ?gt, ?at ++ [mkLConst{0}(); ls{!fid}() - as{!fid}()], ?mem, ?tbl, ?at, ?gt, ?mem)
+  ;

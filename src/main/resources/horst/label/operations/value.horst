@@ -1,0 +1,9 @@
+op labelOf(x: Value): Label := match x with
+  | @Val(l) => l
+  | _       => @H // Should not happen!
+  ;
+
+op raiseTo(x: Value, l: Label): Value := @Val(lub{2}([labelOf(x),l]));
+op lowerTo(x: Value, l: Label): Value := @Val(glb{2}([labelOf(x),l]));
+
+op mkValue(): Value := @Val(@L);

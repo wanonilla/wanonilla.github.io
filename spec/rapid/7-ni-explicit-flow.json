@@ -1,0 +1,18 @@
+[
+  {
+    "function_id": 0,
+    "test_id": 0,
+    "param": [
+      "ST",
+      "ST",
+      "PT",
+      "PT"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "UNSAT"
+    }
+  }
+]

@@ -1,0 +1,161 @@
+op load{!sz: int}(x: tuple<Value; !sz>): Value :=
+  for (!i : int) in interval(1,!sz): a: Value -> @Val(loadValueAux{!i}(base(a),base(x[!i]))), x[0]
+  ;
+
+rule loadRule := for
+  (!fid: int)     in functionIds(),
+  (!op: int)      in loadOps(),
+  (!pc: int)      in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!offset: int)  in memoryOffsetForFunctionIdAndPc(!fid, !pc),
+  (!att: int)     in relevantAttackers()
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?vs: tuple<LValue; 1>, ?u: Value, ?w: Value, ?l: FlowLabel
+         ,?mem00: Memory]
+    memOpTbw{!op}() = 8,
+    iltu{64}(iadd{64}(valueOf(?x),mkConst{!offset + memOpTbw{!op}()/8}()), ishl{64}(valueOf(?size),mkConst{16}())),
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+
+    for (!i: int) in interval(0, 1): && iadd{64}(valueOf(?x), mkConst{!offset+!i}()) != ?i || ?v = ?vs[!i],
+
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(iadd{64}(valueOf(?x), mkConst{!offset+0}()),?vs[0],?size), ?tbl, ?at0, ?gt0, ?mem00),
+    ?u = load{1}(valuesOf{1}(?vs)),
+    ?l = flub{1}(labelsOf{1}(?vs)),
+    ?w = (memOpBw{!op}() = memOpTbw{!op}())
+          ? (?u)
+          : ((memLoadSigned{!op}())
+            ? (extends{memOpTbw{!op}(),memOpBw{!op}()}(?u))
+            : (extendu{memOpTbw{!op}(),memOpBw{!op}()}(?u))
+            )
+      => MState{!fid, !pc + 1, !att}(?ctx, @LVal(?w,flub{3}([?l,labelOf(?x),labelOfCtx(?ctx)])) :: ?st, ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?vs: tuple<LValue; 2>, ?u: Value, ?w: Value, ?l: FlowLabel
+         ,?mem00: Memory, ?mem01: Memory]
+    memOpTbw{!op}() = 16,
+    iltu{64}(iadd{64}(valueOf(?x),mkConst{!offset + memOpTbw{!op}()/8}()), ishl{64}(valueOf(?size),mkConst{16}())),
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+
+    for (!i: int) in interval(0, 2): && iadd{64}(valueOf(?x), mkConst{!offset+!i}()) != ?i || ?v = ?vs[!i],
+
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(iadd{64}(valueOf(?x), mkConst{!offset+0}()),?vs[0],?size), ?tbl, ?at0, ?gt0, ?mem00),
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(iadd{64}(valueOf(?x), mkConst{!offset+1}()),?vs[1],?size), ?tbl, ?at0, ?gt0, ?mem01),
+    ?u = load{2}(valuesOf{2}(?vs)),
+    ?l = flub{2}(labelsOf{2}(?vs)),
+    ?w = (memOpBw{!op}() = memOpTbw{!op}())
+          ? (?u)
+          : ((memLoadSigned{!op}())
+            ? (extends{memOpTbw{!op}(),memOpBw{!op}()}(?u))
+            : (extendu{memOpTbw{!op}(),memOpBw{!op}()}(?u))
+            )
+      => MState{!fid, !pc + 1, !att}(?ctx, @LVal(?w,flub{3}([?l,labelOf(?x),labelOfCtx(?ctx)])) :: ?st, ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?vs: tuple<LValue; 4>, ?u: Value, ?w: Value, ?l: FlowLabel
+         ,?mem00: Memory, ?mem01: Memory, ?mem02: Memory, ?mem03: Memory]
+    memOpTbw{!op}() = 32,
+    iltu{64}(iadd{64}(valueOf(?x),mkConst{!offset + memOpTbw{!op}()/8}()), ishl{64}(valueOf(?size),mkConst{16}())),
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+
+    for (!i: int) in interval(0, 4): && iadd{64}(valueOf(?x), mkConst{!offset+!i}()) != ?i || ?v = ?vs[!i],
+
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(iadd{64}(valueOf(?x), mkConst{!offset+0}()),?vs[0],?size), ?tbl, ?at0, ?gt0, ?mem00),
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(iadd{64}(valueOf(?x), mkConst{!offset+1}()),?vs[1],?size), ?tbl, ?at0, ?gt0, ?mem01),
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(iadd{64}(valueOf(?x), mkConst{!offset+2}()),?vs[2],?size), ?tbl, ?at0, ?gt0, ?mem02),
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(iadd{64}(valueOf(?x), mkConst{!offset+3}()),?vs[3],?size), ?tbl, ?at0, ?gt0, ?mem03),
+    ?u = load{4}(valuesOf{4}(?vs)),
+    ?l = flub{4}(labelsOf{4}(?vs)),
+    ?w = (memOpBw{!op}() = memOpTbw{!op}())
+          ? ((!op = F32LOADMEM) ? (freeValOrTop()) : (?u))
+          : ((memLoadSigned{!op}())
+            ? (extends{memOpTbw{!op}(),memOpBw{!op}()}(?u))
+            : (extendu{memOpTbw{!op}(),memOpBw{!op}()}(?u))
+            )
+      => MState{!fid, !pc + 1, !att}(?ctx, @LVal(?w,flub{3}([?l,labelOf(?x),labelOfCtx(?ctx)])) :: ?st, ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?vs: tuple<LValue; 8>, ?u: Value, ?w: Value, ?l: FlowLabel
+         ,?mem00: Memory, ?mem01: Memory, ?mem02: Memory, ?mem03: Memory, ?mem04: Memory, ?mem05: Memory, ?mem06: Memory, ?mem07: Memory]
+    memOpTbw{!op}() = 64,
+    iltu{64}(iadd{64}(valueOf(?x),mkConst{!offset + memOpTbw{!op}()/8}()), ishl{64}(valueOf(?size),mkConst{16}())),
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+
+    for (!i: int) in interval(0, 8): && iadd{64}(valueOf(?x), mkConst{!offset+!i}()) != ?i || ?v = ?vs[!i],
+
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(iadd{64}(valueOf(?x), mkConst{!offset+0}()),?vs[0],?size), ?tbl, ?at0, ?gt0, ?mem00),
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(iadd{64}(valueOf(?x), mkConst{!offset+1}()),?vs[1],?size), ?tbl, ?at0, ?gt0, ?mem01),
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(iadd{64}(valueOf(?x), mkConst{!offset+2}()),?vs[2],?size), ?tbl, ?at0, ?gt0, ?mem02),
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(iadd{64}(valueOf(?x), mkConst{!offset+3}()),?vs[3],?size), ?tbl, ?at0, ?gt0, ?mem03),
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(iadd{64}(valueOf(?x), mkConst{!offset+4}()),?vs[4],?size), ?tbl, ?at0, ?gt0, ?mem04),
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(iadd{64}(valueOf(?x), mkConst{!offset+5}()),?vs[5],?size), ?tbl, ?at0, ?gt0, ?mem05),
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(iadd{64}(valueOf(?x), mkConst{!offset+6}()),?vs[6],?size), ?tbl, ?at0, ?gt0, ?mem06),
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(iadd{64}(valueOf(?x), mkConst{!offset+7}()),?vs[7],?size), ?tbl, ?at0, ?gt0, ?mem07),
+    ?u = load{8}(valuesOf{8}(?vs)),
+    ?l = flub{8}(labelsOf{8}(?vs)),
+    ?w = (!op = F64LOADMEM) ? (freeValOrTop()) : (?u)
+
+      => MState{!fid, !pc + 1, !att}(?ctx, @LVal(?w,flub{3}([?l,labelOf(?x),labelOfCtx(?ctx)])) :: ?st, ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0)
+  ;
+
+rule storeRule := for
+  (!fid: int)     in functionIds(),
+  (!op: int)      in storeOps(),
+  (!pc: int)      in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!offset: int)  in memoryOffsetForFunctionIdAndPc(!fid, !pc),
+  (!att: int)     in relevantAttackers()
+
+  clause [?ctx: Context, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?d: Value, ?u: Value, ?w: LValue, ?nv: LValue]
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?y :: ?st, ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+
+    iltu{64}(iadd{64}(valueOf(?y),mkConst{!offset + memOpTbw{!op}()/8}()), ishl{64}(valueOf(?size),mkConst{16}())),
+    ?d = isub{64}(?i,iadd{64}(valueOf(?y),mkConst{!offset}())),
+
+    ?u =
+      (memOpBw{!op}() = memOpTbw{!op}())
+      ? ((!op = F32STOREMEM || !op = F64STOREMEM) ? (freeValOrTop()) : (valueOf(?x)))
+      : (wrap{memOpBw{!op}(), memOpTbw{!op}()}(valueOf(?x))),
+
+    valueOf(?w) = iand{64}(ilshr{64}(?u, ishl{64}(?d, mkConst{3}())), mkConst{pow{8}(2)-1}()),
+    labelOf(?w) = flub{4}([labelOf(?x),labelOf(?y),labelOf(?size),labelOfCtx(?ctx)]),
+
+    ?nv = (iltu{64}(?d, mkConst{memOpTbw{!op}()/8}())) ? (?w) : (?v)
+
+      => MState{!fid, !pc + 1, !att}(?ctx, ?st, ?gt, ?lt, @Mem(?i, ?nv, ?size), ?tbl, ?at0, ?gt0, ?mem0)
+  ;
+
+rule sizeRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, MEMORYSIZE),
+  (!att: int) in relevantAttackers()
+
+  clause [?ctx: Context, ?st: tuple<LValue; ss{!fid,!pc}()>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc, !att}(?ctx, ?st, ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0)
+      => MState{!fid, !pc + 1, !att}(?ctx, raiseTo(?size, labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0)
+  ;
+
+rule growRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, MEMORYGROW),
+  (!att: int) in relevantAttackers()
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?ret: LValue, ?nsize: LValue]
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+    iltu{64}(?i, ishl{64}(valueOf(?size),mkConst{16}())),
+    valueOf(?ret) = (growOK(base(valueOf(?x)),base(valueOf(?size)),base(mkConst{mms()}()))) ? (valueOf(?size)) : (mkConst{~1}()),
+    labelOf(?ret) = flub{3}([labelOfCtx(?ctx),labelOf(?x),labelOf(?size)]),
+    valueOf(?nsize) = grow(valueOf(?x), valueOf(?size), mkConst{mms()}()),
+    labelOf(?nsize) = flub{3}([labelOfCtx(?ctx),labelOf(?x),labelOf(?size)])
+      => MState{!fid, !pc + 1, !att}(?ctx, ?ret :: ?st, ?gt, ?lt, @Mem(?i, ?v, ?nsize), ?tbl, ?at0, ?gt0, ?mem0),
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?lt: tuple<LValue; ls{!fid}()>, ?gt: tuple<LValue; gs()>, ?i: Value, ?v: LValue, ?size: LValue, ?tbl: Table, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory
+         ,?ret: LValue, ?nsize: LValue]
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, @Mem(?i,?v,?size), ?tbl, ?at0, ?gt0, ?mem0),
+    igeu{64}(?i, ishl{64}(valueOf(?size),mkConst{16}())),
+    valueOf(?ret) = (growOK(base(valueOf(?x)),base(valueOf(?size)),base(mkConst{mms()}()))) ? (valueOf(?size)) : (mkConst{~1}()),
+    labelOf(?ret) = flub{3}([labelOfCtx(?ctx),labelOf(?x),labelOf(?size)]),
+    valueOf(?nsize) = grow(valueOf(?x), valueOf(?size), mkConst{mms()}()),
+    labelOf(?nsize) = flub{3}([labelOfCtx(?ctx),labelOf(?x),labelOf(?size)])
+      => MState{!fid, !pc + 1, !att}(?ctx, ?ret :: ?st, ?gt, ?lt, @Mem(?i, raiseTo(?v, labelOf(?nsize)), ?nsize), ?tbl, ?at0, ?gt0, ?mem0)
+  ;

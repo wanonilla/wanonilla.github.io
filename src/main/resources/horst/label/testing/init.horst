@@ -1,0 +1,21 @@
+rule invokeAllTestedFunctions := for
+  (!fid: int) in startFunctionId(),
+  (!ldata: bool) in memoryDataInSecret(),
+  (!lsize: bool) in memorySizeInSecret(),
+  (!lmax: bool) in memorySizeMaxSecret()
+
+  clause [?gt: tuple<Value; gs()>, ?at: tuple<Value; as{!fid}()>]
+    for (!idx: int) in interval(0,gs()),
+        (!sec: bool) in globalInSecretForPosition(!idx):
+      && labelOf(?gt[!idx]) = mkLabel(!sec),
+
+    for (!idx: int) in interval(0,as{!fid}()),
+        (!sec: bool) in argumentSecretForPosition(!idx):
+      && labelOf(?at[!idx]) = mkLabel(!sec)
+
+    => Init{!fid}(?at, ?gt),
+
+  clause [?gt: tuple<Value; gs()>, ?at: tuple<Value; as{!fid}()>]
+    Init{!fid}(?at, ?gt)
+      => MState{!fid, 0}(@LCtx, [], ?gt, ?at ++ [mkValue(); ls{!fid}() - as{!fid}()], @Mem(mkLabel(!ldata), mkLabel(!lsize), mkLabel(!lmax)), ?at, ?gt)
+  ;

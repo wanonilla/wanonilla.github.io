@@ -1,0 +1,189 @@
+test testNoninterferenceResultUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in resultSafe()
+
+  [?p: Label
+  ,?rt1: tuple<Value; rs{!fid}()>, ?gt1: tuple<Value; gs()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+  ,?rt2: tuple<Value; rs{!fid}()>, ?gt2: tuple<Value; gs()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+
+    ReturnCall{!fid}(?rt1, ?gt1, ?mem1, ?at01, ?gt01),
+    ReturnCall{!fid}(?rt2, ?gt2, ?mem2, ?at02, ?gt02),
+
+    for (!idx: int) in interval(0,as{!fid}()),
+        (!ca: bool, !ia: bool) in argumentLabelForPosition(!idx):
+      && (~flowsTo(mkLabel(!ca,!ia), ?p) || ~absneq(?at01[!idx],?at02[!idx])),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalInLabelForPosition(!idx):
+      && (~flowsTo(mkLabel(!cg,!ig), ?p) || ~absneq(?gt01[!idx],?gt02[!idx])),
+
+    for (!idx: int) in interval(0,rs{!fid}()),
+        (!cr: bool, !ir: bool) in resultLabelForPosition(!idx):
+      || (flowsTo(mkLabel(!cr,!ir), ?p) && absneq(?rt1[!idx],?rt2[!idx]))
+  ;
+
+test testNoninterferenceResultSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in resultLeak()
+
+  [?p: Label
+  ,?rt1: tuple<Value; rs{!fid}()>, ?gt1: tuple<Value; gs()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+  ,?rt2: tuple<Value; rs{!fid}()>, ?gt2: tuple<Value; gs()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+
+    ReturnCall{!fid}(?rt1, ?gt1, ?mem1, ?at01, ?gt01),
+    ReturnCall{!fid}(?rt2, ?gt2, ?mem2, ?at02, ?gt02),
+
+    for (!idx: int) in interval(0,as{!fid}()),
+        (!ca: bool, !ia: bool) in argumentLabelForPosition(!idx):
+      && (~flowsTo(mkLabel(!ca,!ia), ?p) || ~absneq(?at01[!idx],?at02[!idx])),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalInLabelForPosition(!idx):
+      && (~flowsTo(mkLabel(!cg,!ig), ?p) || ~absneq(?gt01[!idx],?gt02[!idx])),
+
+    for (!idx: int) in interval(0,rs{!fid}()),
+        (!cr: bool, !ir: bool) in resultLabelForPosition(!idx):
+      || (flowsTo(mkLabel(!cr,!ir), ?p) && absneq(?rt1[!idx],?rt2[!idx]))
+  ;
+
+test testNoninterferenceGlobalUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in globalSafe()
+
+  [?p: Label
+  ,?rt1: tuple<Value; rs{!fid}()>, ?gt1: tuple<Value; gs()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+  ,?rt2: tuple<Value; rs{!fid}()>, ?gt2: tuple<Value; gs()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+
+    ReturnCall{!fid}(?rt1, ?gt1, ?mem1, ?at01, ?gt01),
+    ReturnCall{!fid}(?rt2, ?gt2, ?mem2, ?at02, ?gt02),
+
+    for (!idx: int) in interval(0,as{!fid}()),
+        (!ca: bool, !ia: bool) in argumentLabelForPosition(!idx):
+      && (~flowsTo(mkLabel(!ca,!ia), ?p) || ~absneq(?at01[!idx],?at02[!idx])),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalInLabelForPosition(!idx):
+      && (~flowsTo(mkLabel(!cg,!ig), ?p) || ~absneq(?gt01[!idx],?gt02[!idx])),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalOutLabelForPosition(!idx):
+      || (flowsTo(mkLabel(!cg,!ig), ?p) && absneq(?gt1[!idx],?gt2[!idx]))
+  ;
+
+test testNoninterferenceGlobalSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in globalLeak()
+
+  [?p: Label
+  ,?rt1: tuple<Value; rs{!fid}()>, ?gt1: tuple<Value; gs()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+  ,?rt2: tuple<Value; rs{!fid}()>, ?gt2: tuple<Value; gs()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+
+    ReturnCall{!fid}(?rt1, ?gt1, ?mem1, ?at01, ?gt01),
+    ReturnCall{!fid}(?rt2, ?gt2, ?mem2, ?at02, ?gt02),
+
+    for (!idx: int) in interval(0,as{!fid}()),
+        (!ca: bool, !ia: bool) in argumentLabelForPosition(!idx):
+      && (~flowsTo(mkLabel(!ca,!ia), ?p) || ~absneq(?at01[!idx],?at02[!idx])),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalInLabelForPosition(!idx):
+      && (~flowsTo(mkLabel(!cg,!ig), ?p) || ~absneq(?gt01[!idx],?gt02[!idx])),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalOutLabelForPosition(!idx):
+      || (flowsTo(mkLabel(!cg,!ig), ?p) && absneq(?gt1[!idx],?gt2[!idx]))
+  ;
+
+test testNoninterferenceMemoryDataUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in memoryDataSafe()
+
+  [?p: Label
+  ,?rt1: tuple<Value; rs{!fid}()>, ?gt1: tuple<Value; gs()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+  ,?rt2: tuple<Value; rs{!fid}()>, ?gt2: tuple<Value; gs()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>
+  ,?idx: int]
+
+    ReturnCall{!fid}(?rt1, ?gt1, ?mem1, ?at01, ?gt01),
+    ReturnCall{!fid}(?rt2, ?gt2, ?mem2, ?at02, ?gt02),
+
+    for (!idx: int) in interval(0,as{!fid}()),
+        (!ca: bool, !ia: bool) in argumentLabelForPosition(!idx):
+      && (~flowsTo(mkLabel(!ca,!ia), ?p) || ~absneq(?at01[!idx],?at02[!idx])),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalInLabelForPosition(!idx):
+      && (~flowsTo(mkLabel(!cg,!ig), ?p) || ~absneq(?gt01[!idx],?gt02[!idx])),
+
+    for (!cd: bool, !id: bool) in memoryDataOutLabel():
+      || (flowsTo(mkLabel(!cd,!id), ?p) && absneq(select dataOfMem(?mem1) ?idx,select dataOfMem(?mem1) ?idx))
+  ;
+
+test testNoninterferenceMemoryDataSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in memoryDataLeak()
+
+  [?p: Label
+  ,?rt1: tuple<Value; rs{!fid}()>, ?gt1: tuple<Value; gs()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+  ,?rt2: tuple<Value; rs{!fid}()>, ?gt2: tuple<Value; gs()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>
+  ,?idx: int]
+
+    ReturnCall{!fid}(?rt1, ?gt1, ?mem1, ?at01, ?gt01),
+    ReturnCall{!fid}(?rt2, ?gt2, ?mem2, ?at02, ?gt02),
+
+    for (!idx: int) in interval(0,as{!fid}()),
+        (!ca: bool, !ia: bool) in argumentLabelForPosition(!idx):
+      && (~flowsTo(mkLabel(!ca,!ia), ?p) || ~absneq(?at01[!idx],?at02[!idx])),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalInLabelForPosition(!idx):
+      && (~flowsTo(mkLabel(!cg,!ig), ?p) || ~absneq(?gt01[!idx],?gt02[!idx])),
+
+    for (!cd: bool, !id: bool) in memoryDataOutLabel():
+      || (flowsTo(mkLabel(!cd,!id), ?p) && absneq(select dataOfMem(?mem1) ?idx,select dataOfMem(?mem1) ?idx))
+  ;
+
+test testNoninterferenceMemorySizeUnsat expect UNSAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in memorySizeSafe()
+
+  [?p: Label
+  ,?rt1: tuple<Value; rs{!fid}()>, ?gt1: tuple<Value; gs()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+  ,?rt2: tuple<Value; rs{!fid}()>, ?gt2: tuple<Value; gs()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+
+    ReturnCall{!fid}(?rt1, ?gt1, ?mem1, ?at01, ?gt01),
+    ReturnCall{!fid}(?rt2, ?gt2, ?mem2, ?at02, ?gt02),
+
+    for (!idx: int) in interval(0,as{!fid}()),
+        (!ca: bool, !ia: bool) in argumentLabelForPosition(!idx):
+      && (~flowsTo(mkLabel(!ca,!ia), ?p) || ~absneq(?at01[!idx],?at02[!idx])),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalInLabelForPosition(!idx):
+      && (~flowsTo(mkLabel(!cg,!ig), ?p) || ~absneq(?gt01[!idx],?gt02[!idx])),
+
+    for (!cs: bool, !is: bool) in memorySizeOutLabel():
+      || (flowsTo(mkLabel(!cs,!is), ?p) && absneq(sizeOfMem(?mem1),sizeOfMem(?mem2)))
+  ;
+
+test testNoninterferenceMemorySizeSat expect SAT for
+  (!fid: int) in startFunctionId(),
+  (!cid: int) in memorySizeLeak()
+
+  [?p: Label
+  ,?rt1: tuple<Value; rs{!fid}()>, ?gt1: tuple<Value; gs()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+  ,?rt2: tuple<Value; rs{!fid}()>, ?gt2: tuple<Value; gs()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+
+    ReturnCall{!fid}(?rt1, ?gt1, ?mem1, ?at01, ?gt01),
+    ReturnCall{!fid}(?rt2, ?gt2, ?mem2, ?at02, ?gt02),
+
+    for (!idx: int) in interval(0,as{!fid}()),
+        (!ca: bool, !ia: bool) in argumentLabelForPosition(!idx):
+      && (~flowsTo(mkLabel(!ca,!ia), ?p) || ~absneq(?at01[!idx],?at02[!idx])),
+
+    for (!idx: int) in interval(0,gs()),
+        (!cg: bool, !ig: bool) in globalInLabelForPosition(!idx):
+      && (~flowsTo(mkLabel(!cg,!ig), ?p) || ~absneq(?gt01[!idx],?gt02[!idx])),
+
+    for (!cs: bool, !is: bool) in memorySizeOutLabel():
+      || (flowsTo(mkLabel(!cs,!is), ?p) && absneq(sizeOfMem(?mem1),sizeOfMem(?mem2)))
+  ;

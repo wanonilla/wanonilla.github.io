@@ -1,0 +1,55 @@
+rule dropRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, DROP)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?from, ?st[1:], ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+      => MState2{!fid, !pc + 1}(?st1[1:], ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2[1:], ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;
+
+rule selectRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, SELECT)
+
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    abseq(?st[0], mkConst{0}())
+      => MState{!fid, !pc + 1}(?from, [?st[1],] ++ ?st[3:], ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?gt: tuple<Value; gs()>, ?lt: tuple<Value; ls{!fid}()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?from, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    absneq(?st[0], mkConst{0}())
+      => MState{!fid, !pc + 1}(?from, [?st[2],] ++ ?st[3:], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    abseq(?st1[0], mkConst{0}()),
+    abseq(?st2[0], mkConst{0}())
+      => MState2{!fid, !pc + 1}([?st1[1],] ++ ?st1[3:], ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                               ,[?st2[1],] ++ ?st2[3:], ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    abseq(?st1[0], mkConst{0}()),
+    absneq(?st2[0], mkConst{0}())
+      => MState2{!fid, !pc + 1}([?st1[1],] ++ ?st1[3:], ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                               ,[?st2[2],] ++ ?st2[3:], ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    absneq(?st1[0], mkConst{0}()),
+    abseq(?st2[0], mkConst{0}())
+      => MState2{!fid, !pc + 1}([?st1[2],] ++ ?st1[3:], ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                               ,[?st2[1],] ++ ?st2[3:], ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+  clause [?st1: tuple<Value; ss{!fid,!pc}()>, ?gt1: tuple<Value; gs()>, ?lt1: tuple<Value; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?st2: tuple<Value; ss{!fid,!pc}()>, ?gt2: tuple<Value; gs()>, ?lt2: tuple<Value; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    MState2{!fid, !pc}(?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02),
+    absneq(?st1[0], mkConst{0}()),
+    absneq(?st2[0], mkConst{0}())
+      => MState2{!fid, !pc + 1}([?st1[2],] ++ ?st1[3:], ?gt1, ?lt1, ?mem1, ?at01, ?gt01
+                               ,[?st2[2],] ++ ?st2[3:], ?gt2, ?lt2, ?mem2, ?at02, ?gt02)
+  ;

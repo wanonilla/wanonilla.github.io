@@ -1,0 +1,51 @@
+rule loadRule := for
+  (!fid: int)    in functionIds(),
+  (!op: int)     in loadOps(),
+  (!pc: int)     in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!offset: int) in memoryOffsetForFunctionIdAndPc(!fid, !pc)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, [@Val(lub{3}([labelOfCtx(?ctx),dataOfMem(?mem),labelOf(?st[0])])),] ++ ?st[1:], ?gt, ?lt, ?mem, ?at0, ?gt0),
+  clause [?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(@LCtx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => Trap{!fid}(labelOf(?st[0]), !pc, ?gt, ?mem, ?at0, ?gt0),
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => Trap{!fid}(@H, ?from, ?gt, ?mem, ?at0, ?gt0)
+  ;
+
+rule storeRule := for
+  (!fid: int)    in functionIds(),
+  (!op: int)     in storeOps(),
+  (!pc: int)     in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!offset: int) in memoryOffsetForFunctionIdAndPc(!fid, !pc)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, ?st[2:], ?gt, ?lt, @Mem(lub{4}([labelOfCtx(?ctx),dataOfMem(?mem),labelOf(?st[0]),labelOf(?st[1])]), sizeOfMem(?mem), maxOfMem(?mem)), ?at0, ?gt0),
+  clause [?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(@LCtx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => Trap{!fid}(labelOf(?st[1]), !pc, ?gt, ?mem, ?at0, ?gt0),
+  clause [?from: int, ?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => Trap{!fid}(@H, ?from, ?gt, ?mem, ?at0, ?gt0)
+  ;
+
+rule sizeRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, MEMORYSIZE)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, [@Val(lub{2}([sizeOfMem(?mem),labelOfCtx(?ctx)])),] ++ ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule growRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, MEMORYGROW)
+
+  clause [?ctx: Context, ?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, [@Val(sizeOfMem(?mem)),] ++ ?st[1:], ?gt, ?lt, @Mem(dataOfMem(?mem),lub{3}([labelOfCtx(?ctx), labelOf(?st[0]), sizeOfMem(?mem)]), maxOfMem(?mem)), ?at0, ?gt0)
+  ;

@@ -1,0 +1,17 @@
+pred TrapCall{!fid: int}: tuple<Value; gs()> * Memory * tuple<Value; as{!fid}()> * tuple<Value; gs()>;
+pred ReturnCall{!fid: int}:  tuple<Value; rs{!fid}()> * tuple<Value; gs()> * Memory * tuple<Value; as{!fid}()> * tuple<Value; gs()>;
+
+rule propagateTrapRule := for
+  (!fid: int) in startFunctionId()
+
+  clause [?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    Trap{!fid}(?gt, ?mem, ?at0, ?gt0)
+      => TrapCall{!fid}(?gt, ?mem, ?at0, ?gt0);
+
+rule propagateReturnRule := for
+  (!fid: int) in startFunctionId()
+
+  clause [?rt: tuple<Value; rs{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    Return{!fid}(?rt, ?gt, ?mem, ?at0, ?gt0)
+      => ReturnCall{!fid}(?rt, ?gt, ?mem, ?at0, ?gt0)
+  ;

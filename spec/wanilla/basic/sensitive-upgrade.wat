@@ -1,0 +1,50 @@
+(module
+  (func (export "sensitive-upgrade") (param $secret i32) (result i32)
+    (local $x i32)
+    (if (local.get $secret)
+      (then
+        (i32.const 1)
+        (local.set $x)
+      )
+      (else)
+    )
+    (local.get $x)
+  )
+
+  (func (export "non-sensitive-upgrade") (param $secret i32) (result i32)
+    (local $x i32)
+    (if (local.get $secret)
+      (then
+        (i32.const 1)
+        (local.set $x)
+      )
+      (else
+        (i32.const 1)
+        (local.set $x)
+      )
+    )
+    (local.get $x)
+  )
+
+  (func (export "sensitive-return") (param $secret i32) (result i32)
+    (if (local.get $secret)
+      (then
+        (i32.const 1)
+        (return)
+      )
+      (else)
+    )
+    (i32.const 0)
+  )
+
+  (func (export "non-sensitive-return") (param $secret i32) (result i32)
+    (if (local.get $secret)
+      (then
+        (i32.const 1)
+        (return)
+      )
+      (else)
+    )
+    (i32.const 1)
+  )
+)

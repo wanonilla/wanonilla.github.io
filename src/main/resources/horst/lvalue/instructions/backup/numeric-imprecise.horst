@@ -1,0 +1,77 @@
+op labelledUnOp{!op: int}(a: LValue) : LValue := match a with
+  | @LVal(i,l) => @LVal(unOp{!op}(i),l)
+  | _          => @LVal(freeValOrTop(),@H)
+  ;
+
+op labelledBinOp{!op: int}(a: LValue, b: LValue) : LValue := match (a,b) with
+  | (@LVal(i1,l1),@LVal(i2,l2)) => @LVal(binOp{!op}(i1,i2),lub{2}([l1,l2]))
+  | _                           => @LVal(freeValOrTop(),@H)
+  ;
+
+op labelledCvtOp{!op: int}(a: LValue) : LValue := match a with
+  | @LVal(i,l) => @LVal(cvtOp{!op}(i),l)
+  | _          => @LVal(freeValOrTop(),@H)
+  ;
+
+// ===== rules ====== //
+
+rule constRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int, !v: int, !top: bool) in pcsAndValueAndTopOfConstsForFunctionId(!fid)
+
+  clause [?ctx: Context, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, @LVal(val{!top,!v}(), labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule unOpRule := for
+  (!fid: int) in functionIds(),
+  (!op: int) in unOps(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, !op)
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, raiseTo(labelledUnOp{!op}(?x), labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule binOpRule := for
+  (!fid: int) in functionIds(),
+  (!op: int) in binOps(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, !op)
+
+  clause [?ctx: Context, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(?ctx, ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, raiseTo(labelledBinOp{!op}(?y, ?x), labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule trappingBinOpRule := for
+  (!fid: int) in functionIds(),
+  (!op: int) in trappingBinOps(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, !op)
+
+  clause [?ctx: Context, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?res: MaybeValue, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(?ctx, ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?res = trappingBinOp{!op}(valueOf(?y), valueOf(?x)),
+    isJustV(?res)
+      => MState{!fid, !pc + 1}(?ctx, @LVal(fromJustV(?res), lub{3}([labelOf(?y),labelOf(?x),labelOfCtx(?ctx)])) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule cvtOpRule := for
+  (!fid: int) in functionIds(),
+  (!op: int)  in cvtOps(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, !op)
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, raiseTo(labelledCvtOp{!op}(?x), labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule trappingCvtOpRule := for
+  (!fid: int) in functionIds(),
+  (!op: int)  in trappingCvtOps(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, !op)
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}(?ctx, raiseTo(labelledCvtOp{!op}(?x), labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;

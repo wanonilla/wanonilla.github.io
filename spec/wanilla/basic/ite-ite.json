@@ -1,0 +1,226 @@
+[
+  {
+    "function_id": 0,
+    "test_id": 0,
+    "param": [
+      "PT",
+      "PT"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 0,
+    "test_id": 1,
+    "param": [
+      "PT",
+      "ST"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 0,
+    "test_id": 2,
+    "param": [
+      "ST",
+      "PT"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 0,
+    "test_id": 3,
+    "param": [
+      "ST",
+      "ST"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 0,
+    "param": [
+      "PT",
+      "PT"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 1,
+    "param": [
+      "PT",
+      "ST"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 2,
+    "param": [
+      "ST",
+      "PT"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 1,
+    "test_id": 3,
+    "param": [
+      "ST",
+      "ST"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 2,
+    "test_id": 0,
+    "param": [
+      "PT",
+      "PT"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 2,
+    "test_id": 1,
+    "param": [
+      "PT",
+      "ST"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 2,
+    "test_id": 2,
+    "param": [
+      "ST",
+      "PT"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 2,
+    "test_id": 3,
+    "param": [
+      "ST",
+      "ST"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "SAT"
+    }
+  },
+  {
+    "function_id": 3,
+    "test_id": 0,
+    "param": [
+      "PT",
+      "PT"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 3,
+    "test_id": 1,
+    "param": [
+      "PT",
+      "ST"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 3,
+    "test_id": 2,
+    "param": [
+      "ST",
+      "PT"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "UNSAT"
+    }
+  },
+  {
+    "function_id": 3,
+    "test_id": 3,
+    "param": [
+      "ST",
+      "ST"
+    ],
+    "result": [
+      "PT"
+    ],
+    "queries": {
+      "result": "UNSAT"
+    }
+  }
+]

@@ -1,0 +1,25 @@
+rule invokeAllTestedFunctions := for
+  (!fid: int) in startFunctionId(),
+  (!importMem: bool) in isMemoryImported(),
+  (!min: int) in getMemoryMin(),
+  (!max: int) in getMemoryMax()
+
+  clause [?gt: tuple<Value; gs()>, ?at: tuple<Value; as{!fid}()>, ?arr: array<Value>, ?mem: Memory]
+    for (!idx: int)           in interval(0,gs()),
+        (!v: int, !top: bool) in valueAndTopOfGlobal(!idx),
+        (!bw: int)            in bitwidthForGlobal(!idx):
+      && ?gt[!idx] = val{!top, !v}() && isInRange{!bw}(?gt[!idx]),
+
+    for (!idx: int) in interval(0,as{!fid}()),
+        (!bw: int)  in bitwidthForArgument(!fid,!idx):
+      && isInRange{!bw}(?at[!idx]),
+
+    (!importMem || ?arr = for (!pos: int, !val: int) in datasegmentsWithPositions(): x: array<Value> -> store x !pos mkConst{!val}(), [mkConst{0}()]),
+
+    ?mem = @Mem(
+      ?arr
+    , mkConst{!min}()
+    )
+
+      => MState{!fid, 0}([], ?gt, ?at ++ [mkConst{0}(); ls{!fid}() - as{!fid}()], ?mem, ?at, ?gt)
+  ;

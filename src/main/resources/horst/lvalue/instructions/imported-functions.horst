@@ -1,0 +1,24 @@
+rule importedFunctionRule := for
+  (!fid: int) in importedFunctionIds()
+
+  clause [?ctx: Context, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?rl: Label, ?rbr: int, ?rt: tuple<LValue; rs{!fid}()>, ?rgt: tuple<LValue; gs()>, ?rlbl: Label, ?rdata: array<Value>, ?rsize: LValue]
+    MState{!fid, 0}(?ctx, [], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+    for (!idx: int) in interval(0,rs{!fid}()),
+         (!sec: bool) in resultSecretForImportedFunctionAndPosition(!fid,!idx):
+       && labelOf(?rt[!idx]) = mkLabel(!sec),
+
+    for (!idx: int) in interval(0,gs()),
+         (!sec: bool) in globalOutSecretForImportedFunctionAndPosition(!fid,!idx):
+       && labelOf(?rgt[!idx]) = mkLabel(!sec),
+
+    absle(valueOf(?rsize),valueOf(?rmax)),
+    for (!ldata: bool) in memoryDataOutSecretForImportedFunction(!fid),
+        (!lsize: bool) in memorySizeOutSecretForImportedFunction(!fid):
+      && ?rlbl = mkLabel(!ldata) && labelOf(?rsize) = mkLabel(!lsize),
+
+    labelOfCtx(?ctx) = mkLabel(?rl = @H && ?rbr = 0)
+
+       => Return{!fid}(?rl, ?rbr, ?rt, ?rgt, @Mem(?rlbl, ?rdata, ?rsize, maxOfMem(?mem)), ?at0, ?gt0)
+  ;

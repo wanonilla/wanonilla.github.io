@@ -1,0 +1,64 @@
+rule loadRule := for
+  (!fid: int)    in functionIds(),
+  (!op: int)     in loadOps(),
+  (!pc: int)     in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!offset: int) in memoryOffsetForFunctionIdAndPc(!fid, !pc)
+
+  clause [?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>
+         ,?v: Value]
+    MState{!fid, !pc}(?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    boundOK{memOpBw{!op}(), !offset}(sizeOfMem(?mem), ?st[0]),
+    ?v = memLoad{!op, !offset}(dataOfMem(?mem), ?st[0])
+      => MState{!fid, !pc + 1}([?v,] ++ ?st[1:], ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ~isVal(?st[0]) || ~boundOK{memOpBw{!op}(), !offset}(sizeOfMem(?mem), ?st[0])
+      => Trap{!fid}(?gt, ?mem, ?at0, ?gt0)
+  ;
+
+rule storeRule := for
+  (!fid: int)    in functionIds(),
+  (!op: int)     in storeOps(),
+  (!pc: int)     in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!offset: int) in memoryOffsetForFunctionIdAndPc(!fid, !pc)
+
+  clause [?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>
+         ,?res: array<Value>, ?nmem: Memory]
+    MState{!fid, !pc}(?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    boundOK{memOpBw{!op}(), !offset}(sizeOfMem(?mem), ?st[1]),
+    ?res = memStore{!op, !offset}(dataOfMem(?mem), ?st[1], ?st[0]),
+    ?nmem = @Mem(?res, sizeOfMem(?mem))
+      => MState{!fid, !pc + 1}(?st[2:], ?gt, ?lt, ?nmem, ?at0, ?gt0),
+
+  clause [?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?res: MaybeMemory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ~isVal(?st[1]) || ~boundOK{memOpBw{!op}(), !offset}(sizeOfMem(?mem), ?st[1])
+      => Trap{!fid}(?gt, ?mem, ?at0, ?gt0)
+  ;
+
+
+rule sizeRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, MEMORYSIZE)
+
+  clause [?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>]
+    MState{!fid, !pc}(?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => MState{!fid, !pc + 1}([sizeOfMem(?mem),] ++ ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+  ;
+
+rule growRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, MEMORYGROW)
+
+  clause [?st: tuple<Value; ss{!fid,!pc}()>, ?lt: tuple<Value; ls{!fid}()>, ?gt: tuple<Value; gs()>, ?mem: Memory, ?at0: tuple<Value; as{!fid}()>, ?gt0: tuple<Value; gs()>
+         ,?size: Value, ?nmem: Memory]
+    MState{!fid, !pc}(?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?size = grow(?st[0], sizeOfMem(?mem), mkConst{mms()}()),
+    ?nmem = (
+      match ?mem with
+      | @Mem(data, _) => @Mem(data, ?size)
+      | _ => ?mem // Should not happen!!
+    )
+      => MState{!fid, !pc + 1}([sizeOfMem(?mem),] ++ ?st[1:], ?gt, ?lt, ?nmem, ?at0, ?gt0)
+  ;

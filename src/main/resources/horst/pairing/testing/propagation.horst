@@ -1,0 +1,10 @@
+pred ReturnCall{!fid: int}: tuple<Value; rs{!fid}()> * tuple<Value; gs()> * Memory * tuple<Value; as{!fid}()> * tuple<Value; gs()> * tuple<Value; rs{!fid}()> * tuple<Value; gs()> * Memory * tuple<Value; as{!fid}()> * tuple<Value; gs()>;
+
+rule propagateReturnRule := for
+  (!fid: int) in startFunctionId()
+
+  clause [?rt1: tuple<Value; rs{!fid}()>, ?rgt1: tuple<Value; gs()>, ?rmem1: Memory, ?at01: tuple<Value; as{!fid}()>, ?gt01: tuple<Value; gs()>
+         ,?rt2: tuple<Value; rs{!fid}()>, ?rgt2: tuple<Value; gs()>, ?rmem2: Memory, ?at02: tuple<Value; as{!fid}()>, ?gt02: tuple<Value; gs()>]
+    Return2{!fid}(?rt1, ?rgt1, ?rmem1, ?at01, ?gt01, ?rt2, ?rgt2, ?rmem2, ?at02, ?gt02)
+      => ReturnCall{!fid}(?rt1, ?rgt1, ?rmem1, ?at01, ?gt01, ?rt2, ?rgt2, ?rmem2, ?at02, ?gt02)
+  ;

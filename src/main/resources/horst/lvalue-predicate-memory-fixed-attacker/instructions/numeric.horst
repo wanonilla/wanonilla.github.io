@@ -1,0 +1,161 @@
+rule constRule := for
+  (!fid: int) in functionIds(),
+  (!pc: int, !v: int, !top: bool) in pcsAndValueAndTopOfConstsForFunctionId(!fid),
+  (!att: int) in relevantAttackers()
+
+  clause [?ctx: Context, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc, !att}(?ctx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0)
+      => MState{!fid, !pc + 1, !att}(?ctx, @LVal(val{!top,!v}(), labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0)
+  ;
+
+rule unOpRule := for
+  (!fid: int) in functionIds(),
+  (!op: int) in unOps(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!att: int) in relevantAttackers()
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+    flowsTo(labelOf(?x), labelOfCtx(?ctx))
+      => MState{!fid, !pc + 1, !att}(?ctx, @LVal(unOp{!op}(valueOf(?x)), labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+
+  clause [?x1: LValue, ?st1: tuple<LValue; ss{!fid,!pc}()-1>, ?gt1: tuple<LValue; gs()>, ?lt1: tuple<LValue; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?mem01: Memory
+         ,?x2: LValue, ?st2: tuple<LValue; ss{!fid,!pc}()-1>, ?gt2: tuple<LValue; gs()>, ?lt2: tuple<LValue; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>, ?mem02: Memory
+         ,?v1: Value, ?v2: Value]
+
+    MState{!fid, !pc, !att}(@LCtx, ?x1 :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01),
+    MState{!fid, !pc, !att}(@LCtx, ?x2 :: ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02, ?mem02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02),
+    lowEqMem(?mem01,?mem02),
+
+    labelOf(?x1) = @H,
+
+    ?v1 = unOp{!op}(valueOf(?x1)),
+    ?v2 = unOp{!op}(valueOf(?x2))
+
+      => MState{!fid, !pc + 1, !att}(@LCtx, joinHigh(?v1,?v2) :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01)
+  ;
+
+rule binOpRule := for
+  (!fid: int) in functionIds(),
+  (!op: int) in binOps(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!att: int) in relevantAttackers()
+
+  clause [?ctx: Context, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+    flowsTo(lub{2}([labelOf(?y),labelOf(?x)]), labelOfCtx(?ctx))
+      => MState{!fid, !pc + 1, !att}(?ctx, @LVal(binOp{!op}(valueOf(?y), valueOf(?x)), labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+
+  clause [?x1: LValue, ?y1: LValue, ?st1: tuple<LValue; ss{!fid,!pc}()-2>, ?gt1: tuple<LValue; gs()>, ?lt1: tuple<LValue; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?mem01: Memory
+         ,?x2: LValue, ?y2: LValue, ?st2: tuple<LValue; ss{!fid,!pc}()-2>, ?gt2: tuple<LValue; gs()>, ?lt2: tuple<LValue; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>, ?mem02: Memory
+         ,?v1: Value, ?v2: Value]
+
+    MState{!fid, !pc, !att}(@LCtx, ?x1 :: ?y1 :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01),
+    MState{!fid, !pc, !att}(@LCtx, ?x2 :: ?y2 :: ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02, ?mem02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02),
+    lowEqMem(?mem01,?mem02),
+
+    lub{2}([labelOf(?y1),labelOf(?x1)]) = @H,
+
+    ?v1 = binOp{!op}(valueOf(?y1), valueOf(?x1)),
+    ?v2 = binOp{!op}(valueOf(?y2), valueOf(?x2))
+
+      => MState{!fid, !pc + 1, !att}(@LCtx, joinHigh(?v1,?v2) :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01)
+  ;
+
+rule trappingBinOpRule := for
+  (!fid: int) in functionIds(),
+  (!op: int) in trappingBinOps(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!att: int) in relevantAttackers()
+
+  clause [?ctx: Context, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?res: MaybeValue, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+    ?res = trappingBinOp{!op}(valueOf(?y), valueOf(?x)),
+    isJustV(?res),
+    flowsTo(lub{2}([labelOf(?y),labelOf(?x)]), labelOfCtx(?ctx))
+      => MState{!fid, !pc + 1, !att}(?ctx, @LVal(fromJustV(?res), labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+
+  clause [?x1: LValue, ?y1: LValue, ?st1: tuple<LValue; ss{!fid,!pc}()-2>, ?gt1: tuple<LValue; gs()>, ?lt1: tuple<LValue; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?mem01: Memory
+         ,?x2: LValue, ?y2: LValue, ?st2: tuple<LValue; ss{!fid,!pc}()-2>, ?gt2: tuple<LValue; gs()>, ?lt2: tuple<LValue; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>, ?mem02: Memory
+         ,?res1: MaybeValue, ?res2: MaybeValue, ?v1: Value, ?v2: Value]
+
+    MState{!fid, !pc, !att}(@LCtx, ?x1 :: ?y1 :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01),
+    MState{!fid, !pc, !att}(@LCtx, ?x2 :: ?y2 :: ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02, ?mem02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02),
+    lowEqMem(?mem01,?mem02),
+
+    lub{2}([labelOf(?y1),labelOf(?x1)]) = @H,
+
+    ?res1 = trappingBinOp{!op}(valueOf(?y1), valueOf(?x1)),
+    ?res2 = trappingBinOp{!op}(valueOf(?y2), valueOf(?x2)),
+
+    isJustV(?res1),
+    isJustV(?res2),
+    ?v1 = fromJustV(?res1),
+    ?v2 = fromJustV(?res2)
+
+      => MState{!fid, !pc + 1, !att}(@LCtx, joinHigh(?v1,?v2) :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01)
+  ;
+
+rule cvtOpRule := for
+  (!fid: int) in functionIds(),
+  (!op: int)  in cvtOps(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!att: int) in relevantAttackers()
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+    flowsTo(labelOf(?x), labelOfCtx(?ctx))
+      => MState{!fid, !pc + 1, !att}(?ctx, @LVal(cvtOp{!op}(valueOf(?x)), labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+
+  clause [?x1: LValue, ?st1: tuple<LValue; ss{!fid,!pc}()-1>, ?gt1: tuple<LValue; gs()>, ?lt1: tuple<LValue; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?mem01: Memory
+         ,?x2: LValue, ?st2: tuple<LValue; ss{!fid,!pc}()-1>, ?gt2: tuple<LValue; gs()>, ?lt2: tuple<LValue; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>, ?mem02: Memory
+         ,?v1: Value, ?v2: Value]
+
+    MState{!fid, !pc, !att}(@LCtx, ?x1 :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01),
+    MState{!fid, !pc, !att}(@LCtx, ?x2 :: ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02, ?mem02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02),
+    lowEqMem(?mem01,?mem02),
+
+    labelOf(?x1) = @H,
+
+    ?v1 = cvtOp{!op}(valueOf(?x1)),
+    ?v2 = cvtOp{!op}(valueOf(?x2))
+
+      => MState{!fid, !pc + 1, !att}(@LCtx, joinHigh(?v1,?v2) :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01)
+  ;
+
+rule trappingCvtOpRule := for
+  (!fid: int) in functionIds(),
+  (!op: int)  in trappingCvtOps(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, !op),
+  (!att: int) in relevantAttackers()
+
+  clause [?ctx: Context, ?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>, ?mem0: Memory]
+    MState{!fid, !pc, !att}(?ctx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem0),
+    flowsTo(labelOf(?x), labelOfCtx(?ctx))
+      => MState{!fid, !pc + 1, !att}(?ctx, @LVal(cvtOp{!op}(valueOf(?x)), labelOfCtx(?ctx)) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0, ?mem01),
+
+  clause [?x1: LValue, ?st1: tuple<LValue; ss{!fid,!pc}()-1>, ?gt1: tuple<LValue; gs()>, ?lt1: tuple<LValue; ls{!fid}()>, ?mem1: Memory, ?at01: tuple<LValue; as{!fid}()>, ?gt01: tuple<LValue; gs()>, ?mem01: Memory
+         ,?x2: LValue, ?st2: tuple<LValue; ss{!fid,!pc}()-1>, ?gt2: tuple<LValue; gs()>, ?lt2: tuple<LValue; ls{!fid}()>, ?mem2: Memory, ?at02: tuple<LValue; as{!fid}()>, ?gt02: tuple<LValue; gs()>, ?mem02: Memory
+         ,?v1: Value, ?v2: Value]
+
+    MState{!fid, !pc, !att}(@LCtx, ?x1 :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01),
+    MState{!fid, !pc, !att}(@LCtx, ?x2 :: ?st2, ?gt2, ?lt2, ?mem2, ?at02, ?gt02, ?mem02),
+    lowEq{as{!fid}()}(?at01,?at02),
+    lowEq{gs{}()}(?gt01,?gt02),
+    lowEqMem(?mem01,?mem02),
+
+    labelOf(?x1) = @H,
+
+    ?v1 = cvtOp{!op}(valueOf(?x1)),
+    ?v2 = cvtOp{!op}(valueOf(?x2))
+
+      => MState{!fid, !pc + 1, !att}(@LCtx, joinHigh(?v1,?v2) :: ?st1, ?gt1, ?lt1, ?mem1, ?at01, ?gt01, ?mem01)
+  ;

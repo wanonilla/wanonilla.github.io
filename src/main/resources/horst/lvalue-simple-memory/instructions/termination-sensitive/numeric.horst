@@ -1,0 +1,71 @@
+rule trappingBinOpTsniRule := for
+  (!fid: int) in functionIds(),
+  (!op: int) in trappingBinOps(),
+  (!pc: int) in pcsForFunctionIdAndOpcode(!fid, !op)
+
+  clause [?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?res: MaybeValue]
+    MState{!fid, !pc}(@LCtx, ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?res = trappingBinOp{!op}(valueOf(?y), valueOf(?x)),
+    ~isJustV(?res) || ~isVal(valueOf(?x))
+      => TrapToJoin{!fid}(labelOf(?x), !pc, ?gt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?res: MaybeValue]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?y ::?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?res = trappingBinOp{!op}(valueOf(?y), valueOf(?x)),
+    ~isJustV(?res) || ~isVal(valueOf(?x)),
+    ?from != 0
+      => TrapToJoin{!fid}(@H, ?from, ?gt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?res: MaybeValue]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?res = trappingBinOp{!op}(valueOf(?y), valueOf(?x)),
+    ~isJustV(?res) || ~isVal(valueOf(?x)),
+    ?from = 0
+      => Trap{!fid}(@H, ?from, ?gt, ?mem, ?at0, ?gt0),
+
+  clause [?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?res: MaybeValue, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?res = trappingBinOp{!op}(valueOf(?y), valueOf(?x)),
+    isJustV(?res),
+    labelOf(?x) = @H
+      => MState{!fid, !pc + 1}(@HCtx(!pc), @LVal(fromJustV(?res), @H) :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?x: LValue, ?y: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-2>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>
+         ,?res: MaybeValue]
+    MState{!fid, !pc}(@HCtx(?from), ?x :: ?y :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?res = trappingBinOp{!op}(valueOf(?y), valueOf(?x)),
+    ~isJustV(?res) || ~isVal(valueOf(?x))
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;
+
+rule trappingCvtOpTsniRule := for
+  (!fid: int) in functionIds(),
+  (!op: int)  in trappingCvtOps(),
+  (!pc: int)  in pcsForFunctionIdAndOpcode(!fid, !op)
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => TrapToJoin{!fid}(labelOf(?x), !pc, ?gt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?from != 0
+      => TrapToJoin{!fid}(@H, ?from, ?gt, ?mem, ?at0, ?gt0),
+
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    ?from = 0
+      => Trap{!fid}(@H, ?from, ?gt, ?mem, ?at0, ?gt0),
+
+  clause [?x: LValue, ?st: tuple<LValue; ss{!fid,!pc}()-1>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@LCtx, ?x :: ?st, ?gt, ?lt, ?mem, ?at0, ?gt0),
+    labelOf(?x) = @H
+      => MState{!fid, !pc + 1}(@HCtx(!pc), cvtOp{!op}(?x) :: ?st, ?gt, ?lt, ?mem, !pc, ?at0, ?gt0),
+
+  clause [?from: int, ?st: tuple<LValue; ss{!fid,!pc}()>, ?gt: tuple<LValue; gs()>, ?lt: tuple<LValue; ls{!fid}()>, ?mem: Memory, ?at0: tuple<LValue; as{!fid}()>, ?gt0: tuple<LValue; gs()>]
+    MState{!fid, !pc}(@HCtx(?from), ?st, ?gt, ?lt, ?mem, ?at0, ?gt0)
+      => ScopeExtend{!fid}(?from, pcmax{!fid}())
+  ;

@@ -1,0 +1,319 @@
+{
+  "$schema": "http://json-schema.org/draft/2020-12/schema#",
+  "title": "HoRSt Noninteference Test Configuration",
+  "description": "HoRSt Noninteference Test Configuration",
+  "definitions": {
+    "Sensitivity": {
+      "type": "string",
+      "enum": ["tini","tsni"],
+      "default": "tini"
+    },
+    "Label": {
+      "type": "string",
+      "enum": ["PT","ST","PU","SU"]
+    },
+    "LabelOption": {
+      "type": "string",
+      "enum": ["PT","ST","PU","SU","_"]
+    },
+    "QueryType": {
+      "type": "string",
+      "description": "UNSAT to show a leak cannot occur, SAT to show that a leak can occur",
+      "enum": ["UNSAT","SAT"]
+    },
+    "LabelArray": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Label"
+      }
+    },
+    "LabelOptionArray": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/LabelOption"
+      }
+    },
+    "Memory": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "description": "Security label of memory data",
+          "$ref": "#/definitions/Label"
+        },
+        "size": {
+          "description": "Security label of memory size",
+          "$ref": "#/definitions/Label"
+        }
+      },
+      "required": ["data", "size"],
+      "additionalProperties": false
+    },
+    "MemoryOption": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "description": "Security label of memory data",
+          "$ref": "#/definitions/LabelOption"
+        },
+        "size": {
+          "description": "Security label of memory size",
+          "$ref": "#/definitions/LabelOption"
+        }
+      },
+      "required": ["data", "size"],
+      "additionalProperties": false
+    },
+    "TiniQueries": {
+      "properties": {
+        "result": {
+          "description": "Leak by function result",
+          "$ref": "#/definitions/QueryType"
+        },
+        "global": {
+          "description": "Leak by global at function return",
+          "$ref": "#/definitions/QueryType"
+        },
+        "memory_data": {
+          "description": "Leak by memory contents at function return",
+          "$ref": "#/definitions/QueryType"
+        },
+        "memory_size": {
+          "description": "Leak by memory size at function return",
+          "$ref": "#/definitions/QueryType"
+        },
+        "table": {
+          "description": "Leak by function table at function call",
+          "$ref": "#/definitions/QueryType"
+        },
+        "imported_function": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ImportFunctionQueries"
+          }
+        }
+      }
+    },
+    "TsniQueries": {
+      "properties": {
+        "trap_result": {
+          "description": "Leak by trapping in one run and returning in another",
+          "$ref": "#/definitions/QueryType"
+        },
+        "divergence_result": {
+          "description": "Leak by possible non-termination in one run and returning in another",
+          "$ref": "#/definitions/QueryType"
+        },
+        "trap_divergence": {
+          "description": "Leak by trapping in one run and possible non-termination in another",
+          "$ref": "#/definitions/QueryType"
+        },
+        "global_trap": {
+          "description": "Leak by global at traps",
+          "$ref": "#/definitions/QueryType"
+        },
+        "memory_data_trap": {
+          "description": "Leak by memory contents at traps",
+          "$ref": "#/definitions/QueryType"
+        },
+        "memory_size_trap": {
+          "description": "Leak by memory size at traps",
+          "$ref": "#/definitions/QueryType"
+        },
+        "table_trap": {
+          "description": "Leak by function table at traps",
+          "$ref": "#/definitions/QueryType"
+        }
+      }
+    },
+    "ImportFunctionQueries": {
+      "type": "object",
+      "description": "Queries for leaks from calling imported functions",
+      "properties": {
+        "function_id": {
+          "description": "Function ID of imported function",
+          "type": "integer"
+        },
+        "param": {
+          "description": "Leak by parameters at function call",
+          "$ref": "#/definitions/QueryType"
+        },
+        "global": {
+          "description": "Leak by global at function call",
+          "$ref": "#/definitions/QueryType"
+        },
+        "memory_data": {
+          "description": "Leak by memory contents at function call",
+          "$ref": "#/definitions/QueryType"
+        },
+        "memory_size": {
+          "description": "Leak by memory size at function call",
+          "$ref": "#/definitions/QueryType"
+        },
+        "context": {
+          "description": "Leak by whether function is called",
+          "$ref": "#/definitions/QueryType"
+        },
+        "table": {
+          "description": "Leak by function table at function call",
+          "$ref": "#/definitions/QueryType"
+        }
+      },
+      "required": ["function_id"],
+      "minProperties": 2,
+      "additionalProperties": false
+    },
+    "ImportFunctionSpecification": {
+      "type": "object",
+      "properties": {
+        "function_id": {
+          "description": "Function ID of imported function",
+          "type": "integer"
+        },
+        "context": {
+          "description": "Security label of function context",
+          "$ref": "#/definitions/Label"
+        },
+        "param": {
+          "description": "Security labels of function parameters",
+          "$ref": "#/definitions/LabelArray"
+        },
+        "global_in": {
+          "description": "Security labels of global at call",
+          "$ref": "#/definitions/LabelArray"
+        },
+        "memory_in": {
+          "description": "Security annotation for input memory",
+          "$ref": "#/definitions/Memory"
+        },
+        "table_in": {
+          "description": "Security label of function table at call",
+          "$ref": "#/definitions/Label"
+        },
+        "result": {
+          "description": "Security labels of function result",
+          "$ref": "#/definitions/LabelArray"
+        },
+        "global_out": {
+          "description": "Security labels of global at call return",
+          "$ref": "#/definitions/LabelOptionArray"
+        },
+        "memory_out": {
+          "description": "Security annotation for output memory",
+          "$ref": "#/definitions/MemoryOption"
+        },
+        "table_out": {
+          "description": "Security label of function table at call return",
+          "$ref": "#/definitions/LabelOption"
+        }
+      },
+      "required": ["function_id","context"],
+      "additionalProperties": false
+    },
+    "TestSpecification": {
+      "type": "object",
+      "properties": {
+        "ignore": {
+          "description": "If true the test will not be executed",
+          "type": "boolean"
+        },
+        "test_id": {
+          "description": "Test ID for identifying tests in output",
+          "type": "number"
+        },
+        "function_id": {
+          "description": "Function ID of initial function",
+          "type": "integer"
+        },
+        "sensitivity": {
+          "description": "Termination sensitivity",
+          "$ref": "#/definitions/Sensitivity"
+        },
+        "param": {
+          "description": "Security labels of function parameterss",
+          "$ref": "#/definitions/LabelArray"
+        },
+        "result": {
+          "description": "Security labels of function result",
+          "$ref": "#/definitions/LabelArray"
+        },
+        "global_in": {
+          "description": "Security labels of global at function call",
+          "$ref": "#/definitions/LabelArray"
+        },
+        "global_out": {
+          "description": "Security labels of global at function return",
+          "$ref": "#/definitions/LabelArray"
+        },
+        "memory_in": {
+          "description": "Security annotation for input memory",
+          "$ref": "#/definitions/Memory"
+        },
+        "memory_out": {
+          "description": "Security annotation for output memory",
+          "$ref": "#/definitions/Memory"
+        },
+        "table_in": {
+          "description": "Security label of function table at function call",
+          "$ref": "#/definitions/Label"
+        },
+        "table_out": {
+          "description": "Security label of function table at function return",
+          "$ref": "#/definitions/Label"
+        },
+        "imported_function": {
+          "description": "Security annotation for signatures of imported functions",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ImportFunctionSpecification"
+          }
+        }
+      },
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "queries": {
+              "description": "Queries for termination-insensitive leaks",
+              "$ref": "#/definitions/TiniQueries",
+              "additionalProperties": false
+            },
+            "sensitivity": {
+              "const": "tini"
+            },
+            "additionalProperties": false
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "queries": {
+              "description": "Queries for termination-sensitive leaks",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/TiniQueries"
+                },
+                {
+                  "$ref": "#/definitions/TsniQueries"
+                }
+              ],
+              "additionalProperties": false
+            },
+            "sensitivity": {
+              "const": "tsni"
+            },
+            "additionalProperties": false
+          },
+          "required": ["sensitivity"],
+          "additionalProperties": false
+        }
+      ],
+      "required": ["test_id", "function_id", "queries"],
+      "additionalProperties": false
+    }
+  },
+  "type": "array",
+  "items": {
+    "$ref": "#/definitions/TestSpecification"
+  }
+}
